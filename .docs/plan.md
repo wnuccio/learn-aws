@@ -22,11 +22,11 @@ learn-aws/
 ---
 
 ### 2. Create Your First Simple Lambda (2-3 hours)
-- [ ] Write a basic Java 17 Maven function in `lambda/` (e.g., "Hello World" handler)
-- [ ] Deploy it manually via AWS Console to understand the flow
-- [ ] Test it via the AWS Console
+- [x] Write a basic Java 17 Maven function in `lambda/` (e.g., "Hello World" handler)
+- [x] Deploy it manually via AWS Console to understand the flow
+- [x] Test it via the AWS Console
 
-**Status:** ⏳ Next step
+**Status:** ✅ Complete — HelloWorld Lambda deployed and tested manually
 
 ---
 
@@ -35,7 +35,7 @@ learn-aws/
 - [ ] Re-deploy the same function via Terraform
 - [ ] Learn how Terraform manages state
 
-**Status:** 🔮 Planned
+**Status:** ⏳ Next step
 
 ---
 
