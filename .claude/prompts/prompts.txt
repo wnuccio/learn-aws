@@ -1,0 +1,13 @@
+# Most-Used Prompts
+
+## Learn AWS
+I want to deepen my knowledge about AWS and Terraform.
+On AWS, I'm mainly interested in Lambda at the moment, using Java as language.
+I have an AWS personal account which I can use, but I've been not accessing it for many years.
+I want to use this repo to experiment and follow your guide to learn.
+First of all, I want to understand what is the approach you recommend.
+For example, should I use a single repository for both, Terraform files and the Lambda code?
+Are the two concepts (Terraform and Lambda) related in some way? I'm thinking of deploying my Lambda using Terraform,
+but I'm not sure it's the correct approach.
+Consider that I have only theoretical knowledge of AWS, but not practical one.
+So, first suggest me in short what actions I should make to start.
