@@ -39,3 +39,7 @@ build/
 /.idea/
 /.credentials/credentials.txt
 /dependency-reduced-pom.xml
+
+### Terraform ###
+terraform/.terraform/
+terraform/terraform.tfstate*

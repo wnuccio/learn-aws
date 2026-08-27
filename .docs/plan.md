@@ -31,11 +31,11 @@ learn-aws/
 ---
 
 ### 3. Automate with Terraform (2-3 hours)
-- [ ] Create `terraform/` with a Lambda resource definition
+- [x] Create `terraform/` with a Lambda resource definition
 - [ ] Re-deploy the same function via Terraform
 - [ ] Learn how Terraform manages state
 
-**Status:** ⏳ Next step
+**Status:** ⏳ In progress
 
 ---
 
