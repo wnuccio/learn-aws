@@ -2,14 +2,25 @@ package org.example.lambda;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
+import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 
 @SuppressWarnings("unused")
-public class HelloWorldHandler implements RequestHandler<String, String> {
+public class HelloWorldHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 
     @Override
-    public String handleRequest(String s, Context context) {
-        context.getLogger().log("Received input: " + s);
+    public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
+        String name = event.getQueryStringParameters() != null
+                ? event.getQueryStringParameters().get("name")
+                : null;
 
-        return new HelloWorld().handleRequest(s);
+        context.getLogger().log("Received name: " + name);
+
+        String message = new HelloWorld().handleRequest(name);
+
+        return APIGatewayV2HTTPResponse.builder()
+                .withStatusCode(200)
+                .withBody(message)
+                .build();
     }
 }

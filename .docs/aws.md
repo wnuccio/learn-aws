@@ -15,13 +15,22 @@
   - `credentials` file contains Access key and Secret access key.
   - `config` file contains configuration settings (ex. the `region`).
 
-## Lambda package
+## Lambda
 - ensure the `pom.xml` has the correct AWS SDK dependencies and plugin configurations
 - `mvn package` -> creates the fat JAR in the `target/` directory
 - upload the JAR through the AWS console 
 - specify the `handler method` 
 - specify the Json input: it matches the first parameter of the handler
 - test the function
+
+## API Gateway
+- in terraform, to specify an api gateway there are up to 5 resources involved
+- the `api` is the main resource, having its own id
+- the `integration` is attached to the `api`, and specifies the exposed resource: the lambda function
+- the `route` specifies the path to reach the `integration` (eg. GET /hello)
+- IMPORTANT: the same `api` can have multiple `integration`s, each with its own `route`
+- the `stage`, publishes the api and makes it reachable in an environment (dev, prod)
+- the `permission` gives the api gateway the authorization to invoke the lambda function
 
 # Terraform
 IMPORTANT: Terraform uses the same credentials as the CLI

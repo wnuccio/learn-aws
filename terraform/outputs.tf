@@ -12,3 +12,8 @@ output "iam_role_arn" {
   description = "ARN of the IAM role for Lambda"
   value       = aws_iam_role.lambda_role.arn
 }
+
+output "api_invoke_url" {
+  description = "Invoke URL for the HTTP API"
+  value       = aws_apigatewayv2_stage.default.invoke_url
+}

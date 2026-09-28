@@ -42,3 +42,35 @@ resource "aws_lambda_function" "helloworld" {
 
   source_code_hash = filebase64sha256(var.jar_path)
 }
+
+resource "aws_apigatewayv2_api" "helloworld" {
+  name          = "${var.function_name}-api"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_integration" "helloworld" {
+  api_id                 = aws_apigatewayv2_api.helloworld.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.helloworld.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "helloworld" {
+  api_id    = aws_apigatewayv2_api.helloworld.id
+  route_key = "GET /hello"
+  target    = "integrations/${aws_apigatewayv2_integration.helloworld.id}"
+}
+
+resource "aws_apigatewayv2_stage" "default" {
+  api_id      = aws_apigatewayv2_api.helloworld.id
+  name        = "$default"
+  auto_deploy = true
+}
+
+resource "aws_lambda_permission" "api_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.helloworld.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.helloworld.execution_arn}/*/*"
+}
