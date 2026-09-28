@@ -50,6 +50,34 @@ learn-aws/
 
 ---
 
+### 5. S3 Basics
+- [ ] Add an `aws_s3_bucket` in Terraform
+- [ ] Extend `HelloWorldHandler` to write a small object to the bucket (e.g. the `name` + a timestamp) after building its response
+- [ ] `terraform apply`, then `curl` the API Gateway endpoint and verify the object appears in the bucket (console or `aws s3 ls`)
+- [ ] Leave running (no destroy needed — S3 is effectively free at this scale)
+
+**Status:** 🔮 Next up
+
+---
+
+### 6. RDS + VPC Basics
+- [ ] New Terraform root module (`terraform/rds/`) with a VPC, subnets, security group, and an `aws_db_instance`
+- [ ] Move/extend a Lambda into that VPC to read/write a simple table via JDBC
+- [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
+
+**Status:** 🔮 Future work
+
+---
+
+### 7. MSK Basics
+- [ ] New Terraform root module (`terraform/msk/`), likely MSK Serverless
+- [ ] A simple producer/consumer (Lambda-triggered-by-MSK)
+- [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
+
+**Status:** 🔮 Future work
+
+---
+
 ## Key Concepts to Understand
 
 - **Terraform** = Infrastructure as Code (IaC) — defines *where and how* your Lambda runs
