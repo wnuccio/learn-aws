@@ -20,14 +20,11 @@ public class RealS3Repository implements S3Repository {
             throw new IllegalStateException("S3_BUCKET_NAME environment variable not set");
         }
 
-        if (region == null) {
-            throw new IllegalStateException("APP_REGION environment variable not set");
-        }
-
-        System.out.println("Creating S3Client with region: " + region);
         if (region == null || region.trim().isEmpty()) {
             throw new IllegalStateException("APP_REGION is null or empty");
         }
+
+        System.out.println("Creating S3Client with region: " + region);
 
         try (S3Client s3Client = S3Client.builder().region(Region.of(region)).build()) {
             System.out.println("S3Client created, building request...");
@@ -51,7 +48,7 @@ public class RealS3Repository implements S3Repository {
 
     @Override
     public S3Object getObject(String key) {
-        // TODO: implement real S3 read
+        // not implemented besides the fake
         return null;
     }
 }
