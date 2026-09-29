@@ -32,6 +32,14 @@
 - the `stage`, publishes the api and makes it reachable in an environment (dev, prod)
 - the `permission` gives the api gateway the authorization to invoke the lambda function
 
+## S3
+- a `bucket` is a container that holds objects
+- a `key` is the path/name of the object within the bucket (e.g., `filename.txt` or `folder/filename.txt`)
+- an `object` is the actual data/file stored in the bucket
+- when writing to S3, you specify: the bucket name, the key, and the object (the actual data)
+- example: bucket `learn-aws-helloworld`, key `John-2026-09-29T09:30:45.123Z`, object `"Hello, John!"` (the message string)
+- Lambda must have IAM permissions (`s3:PutObject`) to write objects to a bucket
+
 # Terraform
 IMPORTANT: Terraform uses the same credentials as the CLI
 

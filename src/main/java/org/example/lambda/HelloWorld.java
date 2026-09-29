@@ -1,11 +1,19 @@
 package org.example.lambda;
 
-public class HelloWorld {
+import java.time.Instant;
 
-    public HelloWorld() {
+public class HelloWorld {
+    private final S3Repository s3Repository;
+
+    public HelloWorld(S3Repository s3Repository) {
+        this.s3Repository = s3Repository;
     }
 
-    public String handleRequest(String s) {
-        return String.format("Hello, %s!", s);
+    public String handleRequest(String name) {
+        String message = String.format("Hello, %s!", name);
+        S3Object object = new S3Object(message);
+        String key = (name != null ? name : "unknown") + "-" + Instant.now();
+        s3Repository.putObject(key, object);
+        return key;
     }
 }

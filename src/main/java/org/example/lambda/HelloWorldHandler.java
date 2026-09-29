@@ -16,11 +16,11 @@ public class HelloWorldHandler implements RequestHandler<APIGatewayV2HTTPEvent, 
 
         context.getLogger().log("Received name: " + name);
 
-        String message = new HelloWorld().handleRequest(name);
+        // TODO: implement with real S3Repository
 
         return APIGatewayV2HTTPResponse.builder()
                 .withStatusCode(200)
-                .withBody(message)
+                .withBody("Not implemented yet")
                 .build();
     }
 }

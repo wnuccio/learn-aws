@@ -7,21 +7,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class HelloWorldTest {
 
     @Test
-    public void returnsHelloWorldMessage() {
-        HelloWorld helloWorld = new HelloWorld();
+    public void creates_messag_object_retrievable_by_key() {
+        FakeS3Repository s3Repository = new FakeS3Repository();
+        HelloWorld helloWorld = new HelloWorld(s3Repository);
 
-        String result = helloWorld.handleRequest("World");
+        String key = helloWorld.handleRequest("John");
 
-        assertEquals("Hello, World!", result);
+        assertEquals(new S3Object("Hello, John!"), s3Repository.getObject(key));
     }
-
-    @Test
-    public void returnsHelloLambdaMessage() {
-        HelloWorld helloWorld = new HelloWorld();
-
-        String result = helloWorld.handleRequest("Lambda");
-
-        assertEquals("Hello, Lambda!", result);
-    }
-
 }
