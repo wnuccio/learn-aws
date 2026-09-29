@@ -54,6 +54,18 @@
 - example: bucket `learn-aws-helloworld`, key `John-2026-09-29T09:30:45.123Z`, object `"Hello, John!"` (the message string)
 - Lambda must have IAM permissions (`s3:PutObject`) to write objects to a bucket
 
+## Troubleshooting
+**Strategy for debugging Lambda + API Gateway integration issues:**
+- **Add logs at boundaries**: log before and after each major operation (S3 write, response building, etc.)
+- **Use try-catch-finally**: wrap operations to catch and log any exceptions; use finally to log completion
+- **Isolate components systematically**: test Lambda in isolation (console), then through API Gateway, to identify where the issue is
+  - If Lambda console test works but API Gateway fails → issue is in integration or response format
+  - If Lambda console test fails → issue is in Lambda code or S3 operations
+  - If hardcoded response works but S3 code doesn't → issue is with S3 code, not response format
+- **Check CloudWatch logs sources**: look for status even in absence of error messages (e.g. timeout)
+- **Increase timeouts**: S3 operations and SDK initialization can be slow; increase Lambda timeout
+- **Test incrementally**: remove S3 calls, then add back piece by piece to isolate the problematic code path
+
 # Terraform
 IMPORTANT: Terraform uses the same credentials as the CLI
 
@@ -73,5 +85,6 @@ IMPORTANT: Terraform uses the same credentials as the CLI
 - `terraform destroy`: removes the resources tracked in the state, in the correct order, then emptying the state
 
 IMPORTANT: any resource created manually before 'apply' will not be managed by Terraform, as not tracked in the state
-    
+
+
 
