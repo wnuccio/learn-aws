@@ -36,6 +36,13 @@
             <version>${aws-java-sdk.version}</version>
         </dependency>
 
+        <!-- SLF4J implementation for logging -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.7</version>
+        </dependency>
+
         <!-- JUnit 5 (Jupiter) -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

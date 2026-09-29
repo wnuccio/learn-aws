@@ -23,6 +23,20 @@
 - specify the Json input: it matches the first parameter of the handler
 - test the function
 
+### Lambda Configuration via Terraform
+- each Lambda has its own configuration, specified in the Terraform `aws_lambda_function` resource
+- environment variables can be set via the `environment` block in Terraform
+- example: `S3_BUCKET_NAME` and `AWS_REGION` are set when the Lambda is deployed (`terraform apply`)
+- when the Lambda is invoked, AWS injects these environment variables into the Lambda's runtime
+- the Lambda code retrieves them at runtime via `System.getenv("VARIABLE_NAME")`
+- multiple Lambdas can have different environment variables (e.g., different buckets)
+
+### Logging
+- **`context.getLogger().log()`**: structured logging, integrates with CloudWatch Logs
+- **`System.out.println()`**: goes to CloudWatch but less structured — for code with no access to context
+- **`System.err` / `e.printStackTrace()`**: use specifically for exception stack traces
+- logs from Lambda automatically appear in CloudWatch Logs under `/aws/lambda/function-name`
+
 ## API Gateway
 - in terraform, to specify an api gateway there are up to 5 resources involved
 - the `api` is the main resource, having its own id
