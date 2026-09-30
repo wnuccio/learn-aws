@@ -113,6 +113,11 @@ resource "aws_lambda_permission" "api_gateway" {
   source_arn    = "${aws_apigatewayv2_api.helloworld.execution_arn}/*/*"
 }
 
+resource "aws_cloudwatch_log_group" "lambda_log_group" {
+  name              = "/aws/lambda/${var.function_name}"
+  retention_in_days = 7
+}
+
 resource "aws_cloudwatch_log_group" "api_gateway_log_group" {
   name              = "/aws/apigateway/${var.function_name}"
   retention_in_days = 7
