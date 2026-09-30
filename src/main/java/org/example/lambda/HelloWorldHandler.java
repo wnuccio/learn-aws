@@ -4,9 +4,13 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unused")
 public class HelloWorldHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
+
+    private static final Logger log = LoggerFactory.getLogger(HelloWorldHandler.class);
 
     // built when Lambda constructs the handler, i.e. during the INIT phase
     private final HelloWorld helloWorld = new HelloWorld(new RealS3Repository());
@@ -18,31 +22,20 @@ public class HelloWorldHandler implements RequestHandler<APIGatewayV2HTTPEvent, 
                     ? event.getQueryStringParameters().get("name")
                     : null;
 
-            context.getLogger().log("Received name: " + name);
-
-            context.getLogger().log("Calling handleRequest...");
             String key = helloWorld.handleRequest(name);
-            context.getLogger().log("Stored in S3 with key: " + key);
+            log.info("stored name={} key={}", name, key);
 
-            context.getLogger().log("Building response...");
-            APIGatewayV2HTTPResponse response = APIGatewayV2HTTPResponse.builder()
+            return APIGatewayV2HTTPResponse.builder()
                     .withStatusCode(200)
                     .withBody("Stored: " + key)
                     .build();
 
-            context.getLogger().log("Response built successfully");
-            return response;
-
         } catch (Exception e) {
-            context.getLogger().log("ERROR: " + e.getMessage());
-            e.printStackTrace();
+            log.error("failed to store name", e);
             return APIGatewayV2HTTPResponse.builder()
                     .withStatusCode(500)
                     .withBody("Error: " + e.getMessage())
                     .build();
-
-        } finally {
-            context.getLogger().log("Handler execution completed");
         }
     }
 }

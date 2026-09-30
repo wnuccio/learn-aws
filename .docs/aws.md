@@ -32,9 +32,12 @@
 - multiple Lambdas can have different environment variables (e.g., different buckets)
 
 ### Logging
-- **`context.getLogger().log()`**: structured logging, integrates with CloudWatch Logs
-- **`System.out.println()`**: goes to CloudWatch but less structured — for code with no access to context
-- **`System.err` / `e.printStackTrace()`**: use specifically for exception stack traces
+- SLF4J (`slf4j-simple` in the pom) is used everywhere: it also works in classes with no access to the lambda `Context`
+- `log.error("msg", e)` logs message and stack trace in one CloudWatch event; `e.printStackTrace()` writes a separate one
+- `log.info("key={}", key)`: the placeholders skip the string concatenation when the level is off
+- `slf4j-simple` defaults to level INFO: `debug` lines need a `simplelogger.properties` with `org.slf4j.simpleLogger.defaultLogLevel=debug`
+- `context.getLogger()` is the platform-native alternative, but needs a `Context` and couples the code to lambda
+- avoid catch-log-rethrow: let the exception propagate and log it once at the handler boundary
 - logs from Lambda automatically appear in CloudWatch Logs under `/aws/lambda/function-name`
 
 ## API Gateway
