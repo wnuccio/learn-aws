@@ -8,6 +8,9 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 @SuppressWarnings("unused")
 public class HelloWorldHandler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 
+    // built when Lambda constructs the handler, i.e. during the INIT phase
+    private final HelloWorld helloWorld = new HelloWorld(new RealS3Repository());
+
     @Override
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
         try {
@@ -16,11 +19,6 @@ public class HelloWorldHandler implements RequestHandler<APIGatewayV2HTTPEvent, 
                     : null;
 
             context.getLogger().log("Received name: " + name);
-
-            context.getLogger().log("Creating S3Repository...");
-            S3Repository s3Repository = new RealS3Repository();
-            context.getLogger().log("Creating HelloWorld...");
-            HelloWorld helloWorld = new HelloWorld(s3Repository);
 
             context.getLogger().log("Calling handleRequest...");
             String key = helloWorld.handleRequest(name);
