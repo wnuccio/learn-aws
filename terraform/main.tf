@@ -53,15 +53,15 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
 }
 
 resource "aws_lambda_function" "helloworld" {
-  filename      = var.jar_path
+  filename      = "../target/learn-aws.jar"
   function_name = var.function_name
   role          = aws_iam_role.lambda_role.arn
-  handler       = var.handler
-  runtime       = var.runtime
+  handler       = "org.example.lambda.HelloWorldHandler"
+  runtime       = "java17"
   timeout       = 30
   memory_size   = 1024
 
-  source_code_hash = filebase64sha256(var.jar_path)
+  source_code_hash = filebase64sha256("../target/learn-aws.jar")
 
   environment {
     variables = {
@@ -97,14 +97,9 @@ resource "aws_apigatewayv2_stage" "default" {
   access_log_settings {
     destination_arn = aws_cloudwatch_log_group.api_gateway_log_group.arn
     format = jsonencode({
-      requestId      = "$context.requestId"
-      ip             = "$context.identity.sourceIp"
-      requestTime    = "$context.requestTime"
-      httpMethod     = "$context.httpMethod"
-      routeKey       = "$context.routeKey"
-      status         = "$context.status"
-      protocol       = "$context.protocol"
-      responseLength = "$context.responseLength"
+      requestId               = "$context.requestId"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
       integrationErrorMessage = "$context.integration.error"
     })
   }
