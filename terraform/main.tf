@@ -58,7 +58,8 @@ resource "aws_lambda_function" "helloworld" {
   role          = aws_iam_role.lambda_role.arn
   handler       = var.handler
   runtime       = var.runtime
-  timeout       = 60
+  timeout       = 30
+  memory_size   = 1024
 
   source_code_hash = filebase64sha256(var.jar_path)
 
@@ -92,6 +93,21 @@ resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.helloworld.id
   name        = "$default"
   auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_log_group.arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+      integrationErrorMessage = "$context.integration.error"
+    })
+  }
 }
 
 resource "aws_lambda_permission" "api_gateway" {
@@ -102,6 +118,12 @@ resource "aws_lambda_permission" "api_gateway" {
   source_arn    = "${aws_apigatewayv2_api.helloworld.execution_arn}/*/*"
 }
 
+resource "aws_cloudwatch_log_group" "api_gateway_log_group" {
+  name              = "/aws/apigateway/${var.function_name}"
+  retention_in_days = 7
+}
+
 resource "aws_s3_bucket" "helloworld" {
-  bucket = "learn-aws-helloworld-${data.aws_caller_identity.current.account_id}"
+  bucket         = "learn-aws-helloworld-${data.aws_caller_identity.current.account_id}"
+  force_destroy  = true
 }

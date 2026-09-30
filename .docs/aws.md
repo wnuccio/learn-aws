@@ -46,6 +46,11 @@
 - the `stage`, publishes the api and makes it reachable in an environment (dev, prod)
 - the `permission` gives the api gateway the authorization to invoke the lambda function
 
+## IAM Roles
+**AWSServiceRoleForxxxS** Do NOT delete these or any other service-linked roles. 
+These are AWS-managed Service-linked roles are automatically created by AWS when you use specific services and should never be manually deleted. 
+Only delete custom roles you created for testing/learning that are no longer in use.
+
 ## S3
 - a `bucket` is a container that holds objects
 - a `key` is the path/name of the object within the bucket (e.g., `filename.txt` or `folder/filename.txt`)

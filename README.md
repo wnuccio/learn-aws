@@ -11,14 +11,13 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - Terraform plugin for IntelliJ
 - Set the PATH in: source ~/.zprofile
 
-## First test of lambda function
-- Go on AWS console and verify no lambda function exists
-- Create the fat jar in local, (`mvn package`)
+## First test (lambda function)
+- Go on AWS console and verify no lambda function exists, or S3 bucket
+- Create the fat jar in local (`mvn package`)
 - Launch terraform commands to init, plan and apply the configuration
-- Verify the lambda function is created in AWS console
-- Verify the api gateway is created in AWS console
-- Retrieve the `url` from terraform output (`terraform output -raw api_invoke_url`)
-- Test the function: `GET {url}/hello?name=John`
+- Verify in AWS console that the lambda function, the S3 bucket and the API gateway are created
+- Retrieve the `url` from terraform output (`terraform output -raw api_invoke_url`) or from AWS console (API Gateway -> Stages -> prod -> Invoke URL)
+- Add the url to Postman, and test the function: `GET {url}/hello?name=John`
 - Destroy the configuration using terraform
 
 ## Documentation
