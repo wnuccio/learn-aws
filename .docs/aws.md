@@ -88,8 +88,13 @@ IMPORTANT: Terraform uses the same credentials as the CLI
 - `terraform apply`: the plugin translates the HCL declarations to AWS API calls; generates the tfstate
 - `terraform plan`: compare the current state with the new configuration and detects `drift`
 - `terraform destroy`: removes the resources tracked in the state, in the correct order, then emptying the state
+- `terraform state list`: lists the addresses of all the resources currently tracked in the state
+- `terraform import <address> <aws_id>`: adopts an already existing AWS resource into the state
+  - `<address>` is the terraform resource address (ex. `aws_cloudwatch_log_group.lambda_log_group`)
+  - `<aws_id>` is the AWS resource id (see the 'Import' section on AWS)
+  - it's a state-only operation: nothing is created or modified in AWS; `terraform state rm <address>` backs it out
 
-IMPORTANT: any resource created manually before 'apply' will not be managed by Terraform, as not tracked in the state
+IMPORTANT: any resource created manually before 'apply' will not be managed by Terraform; use 'import' for it
 
 
 
