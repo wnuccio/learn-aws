@@ -50,9 +50,16 @@
 - the `permission` gives the api gateway the authorization to invoke the lambda function
 
 ## IAM Roles
-**AWSServiceRoleForxxxS** Do NOT delete these or any other service-linked roles. 
-These are AWS-managed Service-linked roles are automatically created by AWS when you use specific services and should never be manually deleted. 
-Only delete custom roles you created for testing/learning that are no longer in use.
+- `assume_role_policy` is the trust policy
+  - it is embedded in the `aws_iam_role` resource
+  - it says who can assume the role (e.g. the `lambda.amazonaws.com` service)
+  - it grants no permissions itself
+- `aws_iam_role_policy_attachment` links the role to an existing policy
+  - it attaches an AWS-managed policy to the role by ARN (e.g. `AWSLambdaBasicExecutionRole`)
+- `aws_iam_role_policy` links the role to an inline policy
+  - defines a new policy scoped to just that role, used for app-specific permissions (e.g. S3 write access)
+
+- IMPORTANT: never delete **AWSServiceRoleForxxxS** roles, which are AWS-managed and automatically created
 
 ## S3
 - a `bucket` is a container that holds objects
@@ -78,7 +85,7 @@ Only delete custom roles you created for testing/learning that are no longer in 
 IMPORTANT: Terraform uses the same credentials as the CLI
 
 ## Resource model
-- `resource "aws_lambda_function" "helloworld"`: the `type` is `aws_lambda_function` and the name is `helloworld`
+- a resource is specified as `resource "resource_type" "resource_name"`; e.g.: resource aws_lambda_function helloworld
 - a resource has `input attributes` specified directly, and `computed attributes` generated after the creation (ex. the ARN)
 - the terraform's resource model doesn't always map 1:1: to the AWS model
 - e.g.: `resource "aws_iam_role_policy_attachment" "lambda_basic_execution"` is not an AWS resource, it's just the role-policy relationship
