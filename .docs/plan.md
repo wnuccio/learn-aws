@@ -60,7 +60,18 @@ learn-aws/
 
 ---
 
-### 6. RDS + VPC Basics
+### 6. DynamoDB Basics
+- [ ] Add an `aws_dynamodb_table` in Terraform (e.g. partition key `id`)
+- [ ] Extend `HelloWorldHandler` to write an item to the table (e.g. `name` + timestamp), alongside or instead of the S3 write
+- [ ] Add IAM permissions (`dynamodb:PutItem`) to `lambda_role`
+- [ ] `terraform apply`, then `curl` the API Gateway endpoint and verify the item appears (console or `aws dynamodb scan`)
+- [ ] `terraform destroy` to close the loop
+
+**Status:** 🔮 Next up
+
+---
+
+### 7. RDS + VPC Basics
 - [ ] New Terraform root module (`terraform/rds/`) with a VPC, subnets, security group, and an `aws_db_instance`
 - [ ] Move/extend a Lambda into that VPC to read/write a simple table via JDBC
 - [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
@@ -69,7 +80,7 @@ learn-aws/
 
 ---
 
-### 7. MSK Basics
+### 8. MSK Basics
 - [ ] New Terraform root module (`terraform/msk/`), likely MSK Serverless
 - [ ] A simple producer/consumer (Lambda-triggered-by-MSK)
 - [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
