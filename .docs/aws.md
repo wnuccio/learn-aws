@@ -85,6 +85,54 @@
 - example: bucket `learn-aws-helloworld`, key `John-2026-09-29T09:30:45.123Z`, object `"Hello, John!"` (the message string)
 - Lambda must have IAM permissions (`s3:PutObject`) to write objects to a bucket
 
+## VPC
+- a VPC is a private network (a CIDR block, e.g. `10.0.0.0/16`); 
+- `CIDR`: `base-address/prefix-length` (e.g. `10.0.0.0/16`); 
+  - the prefix fixes the left bits (network part), the rest vary (host addresses); 
+  - e.g.: `10.0.0.0/24` → from `10.0.0.0` to `10.0.0.255`
+- VPC networking applies to resources with a network interface in a subnet (EC2, RDS, Lambda only if explicitly VPC-attached)
+- many AWS services (S3, Lambda by default, DynamoDB) have their own public API endpoint and live outside any VPC
+- a `subnet` lives inside a VPC
+  - a public subnet
+    - has route table which sends `0.0.0.0/0` to an Internet Gateway, 
+    - a resource within it still needs its own public IP to actually be reachable from outside
+  - a private subnet 
+    - has route table which no route to the Internet Gateway (or a NAT Gateway)
+    - can still get outbound internet access via a NAT Gateway; inbound from the internet stays blocked
+- security group: 
+  - a set of inbound/outbound rules (protocol + port + source/destination) attached to a resource's network interface; 
+  - source/destination can be a CIDR range or another security group (by ID)
+  - govern raw network traffic (e.g. a JDBC connection) through packet filtering
+  - different from IAM, which is identity-based and governs calls to AWS APIs (`s3:PutObject`, `lambda:InvokeFunction`); 
+
+### Architecture
+```
+         (public internet)
+                │
+                ▼
+        API Gateway  (outside VPC)
+                │
+       lambda:InvokeFunction
+     (control plane, not network)
+                ▼
+┌───────────────────── VPC ──────────────────────┐
+│                                                  │
+│   ┌──────────┐   JDBC/TCP    ┌──────────┐       │
+│   │  Lambda  │ ─────────────▶│   RDS    │       │
+│   │ (private │ (sec. group   │ (private │       │
+│   │  subnet) │  allows it)   │  subnet) │       │
+│   └────┬─────┘                └──────────┘      │
+│        │                                        │
+└────────┼────────────────────────────────────────┘
+         │ outbound only (NAT Gateway / VPC Endpoint)
+         ▼
+   S3  (outside VPC, public endpoint)
+```
+- API Gateway and S3 are outside the VPC; Lambda and RDS are inside, each in a private subnet
+- gateway → lambda: control-plane invocation, no VPC networking involved
+- lambda → RDS: real network traffic (JDBC/TCP), gated by security groups
+- lambda → S3: also outside the VPC, so it needs a NAT Gateway or VPC Endpoint once the Lambda is VPC-attached
+
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
 - **Add logs at boundaries**: log before and after each major operation (S3 write, response building, etc.)
