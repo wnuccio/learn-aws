@@ -61,6 +61,22 @@
 
 - IMPORTANT: never delete **AWSServiceRoleForxxxS** roles, which are AWS-managed and automatically created
 
+## Identity-based vs Resource-based Policies
+- example: api gateway invokes the lambda, which writes to S3
+  - gateway → lambda: `aws_lambda_permission`, a resource-based policy on the lambda
+  - lambda → S3: `aws_iam_role_policy` on `lambda_role`, an identity-based policy
+- `resource-based`: attached directly to the resource (lambda); says who is allowed to act on it, no role involved
+- `identity-based`: attached to a `role` (or user/group); says what the role is allowed to do
+- either one alone is enough to grant access (same account, no explicit deny elsewhere) - they're not both required
+- when to use which:
+  - `identity-based`: 
+    - keeps all permissions ("what can this thing do") in one place (ex. write to S3, call another service, etc.); 
+    - good when one caller touches many resources
+  - `resource-based`: the caller has no identity of its own or is cross-account; 
+    - keeps "who can touch this" in one place, 
+    - good when one resource is touched by many callers
+- AWS's own default/preference is identity-based policies for same-account access; resource-based is reserved for cases that need it (cross-account, callers without an identity)
+
 ## S3
 - a `bucket` is a container that holds objects
 - a `key` is the path/name of the object within the bucket (e.g., `filename.txt` or `folder/filename.txt`)
