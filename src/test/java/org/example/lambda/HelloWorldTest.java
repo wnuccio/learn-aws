@@ -8,23 +8,19 @@ public class HelloWorldTest {
 
     @Test
     public void creates_message_object_and_stores_it_in_S3() {
-        FakeS3Repository s3Repository = new FakeS3Repository();
-        FakeDynamoRepository dynamoRepository = new FakeDynamoRepository();
-        HelloWorld helloWorld = new HelloWorld(s3Repository, dynamoRepository);
+        TestContext context = new TestContext();
 
-        String key = helloWorld.handleRequest("John");
+        String key = context.helloWorld().handleRequest("John");
 
-        assertEquals(new S3Object("Hello, John!"), s3Repository.getObject(key));
+        assertEquals(new S3Object("Hello, John!"), context.s3Repository.getObject(key));
     }
 
     @Test
     public void creates_message_object_and_stores_it_in_DynamoDB() {
-        FakeS3Repository s3Repository = new FakeS3Repository();
-        FakeDynamoRepository dynamoRepository = new FakeDynamoRepository();
-        HelloWorld helloWorld = new HelloWorld(s3Repository, dynamoRepository);
+        TestContext context = new TestContext();
 
-        String key = helloWorld.handleRequest("John");
+        String key = context.helloWorld().handleRequest("John");
 
-        assertEquals("Hello, John!", dynamoRepository.getItem(key));
+        assertEquals("Hello, John!", context.dynamoRepository.getItem(key));
     }
 }

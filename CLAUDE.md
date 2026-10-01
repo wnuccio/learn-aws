@@ -91,6 +91,14 @@ This project uses JUnit for testing. When dependencies are added:
 - Run `mvn test` to execute all tests
 - Use meaningful test names that describe the behavior being tested
 
+### Conventions
+- Prefer a fake implementation of each repository interface (e.g. `FakeS3Repository implements S3Repository`) over a mocking framework; add extra getters on the fake as needed for assertions (e.g. `getObject`, `getItem`), beyond what the interface itself requires
+- When multiple tests share setup, extract it into a `TestContext` class in the test package, instead of duplicating it per test
+  - dependencies/fakes are fields on `TestContext` (tests need to assert against them afterward)
+  - the system under test is exposed as a **method** on `TestContext` (e.g. `helloWorld()`), not a field, so each test gets a fresh instance
+  - instantiate a new `TestContext` directly inside each `@Test` method; do not use `@BeforeEach`
+- use full variable name `context`, not `ctx`;
+
 ## Notes for Future Development
 
 - As AWS features are added, ensure proper credential handling (never commit real AWS credentials)
