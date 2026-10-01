@@ -40,10 +40,4 @@ public class RealS3Repository implements S3Repository {
 
         S3_CLIENT.putObject(putObjectRequest, RequestBody.fromString(object.getMessage()));
     }
-
-    @Override
-    public S3Object getObject(String key) {
-        // not implemented besides the fake
-        return null;
-    }
 }

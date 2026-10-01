@@ -11,7 +11,6 @@ public class FakeS3Repository implements S3Repository {
         objects.put(key, object);
     }
 
-    @Override
     public S3Object getObject(String key) {
         return objects.get(key);
     }

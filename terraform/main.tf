@@ -52,6 +52,23 @@ resource "aws_iam_role_policy" "lambda_s3_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "lambda_dynamodb_policy" {
+  name   = "${var.function_name}-dynamodb-policy"
+  role   = aws_iam_role.lambda_role.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "dynamodb:PutItem"
+        ]
+        Effect   = "Allow"
+        Resource = aws_dynamodb_table.helloworld.arn
+      }
+    ]
+  })
+}
+
 resource "aws_lambda_function" "helloworld" {
   filename      = "../target/learn-aws.jar"
   function_name = var.function_name
@@ -65,8 +82,9 @@ resource "aws_lambda_function" "helloworld" {
 
   environment {
     variables = {
-      S3_BUCKET_NAME = aws_s3_bucket.helloworld.id
-      APP_REGION     = var.aws_region
+      S3_BUCKET_NAME      = aws_s3_bucket.helloworld.id
+      DYNAMODB_TABLE_NAME = aws_dynamodb_table.helloworld.name
+      APP_REGION          = var.aws_region
     }
   }
 }
@@ -126,4 +144,15 @@ resource "aws_cloudwatch_log_group" "api_gateway_log_group" {
 resource "aws_s3_bucket" "helloworld" {
   bucket         = "learn-aws-helloworld-${data.aws_caller_identity.current.account_id}"
   force_destroy  = true
+}
+
+resource "aws_dynamodb_table" "helloworld" {
+  name         = "${var.function_name}-items"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "id"
+
+  attribute {
+    name = "id"
+    type = "S"
+  }
 }

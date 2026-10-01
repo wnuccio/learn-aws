@@ -13,7 +13,7 @@ public class HelloWorldHandler implements RequestHandler<APIGatewayV2HTTPEvent, 
     private static final Logger log = LoggerFactory.getLogger(HelloWorldHandler.class);
 
     // built when Lambda constructs the handler, i.e. during the INIT phase
-    private final HelloWorld helloWorld = new HelloWorld(new RealS3Repository());
+    private final HelloWorld helloWorld = new HelloWorld(new RealS3Repository(), new RealDynamoRepository());
 
     @Override
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
