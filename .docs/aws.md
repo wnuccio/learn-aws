@@ -85,6 +85,15 @@
 - example: bucket `learn-aws-helloworld`, key `John-2026-09-29T09:30:45.123Z`, object `"Hello, John!"` (the message string)
 - Lambda must have IAM permissions (`s3:PutObject`) to write objects to a bucket
 
+## DynamoDB
+- `partition key`: identifies which physical partition an item lives on (Dynamo hashes it); 
+  - with no sort key, it's the full primary key and must be unique per item
+- `sort key`: orders/filters items that share the same partition key; 
+  - the full primary key is `partition key + sort key` together, and only that combination must be unique
+- querying by partition key alone returns the whole **item collection**: all items in that partition (an "aggregate")
+- querying by partition key + sort key returns one specific item from the collection
+- a range condition (`>`, `between`, `begins_with`) returns a subset of the collection
+
 ## VPC
 - a VPC is a private network (a CIDR block, e.g. `10.0.0.0/16`); 
 - `CIDR`: `base-address/prefix-length` (e.g. `10.0.0.0/16`); 
