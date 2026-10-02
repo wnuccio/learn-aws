@@ -48,6 +48,12 @@
 - IMPORTANT: the same `api` can have multiple `integration`s, each with its own `route`
 - the `stage`, publishes the api and makes it reachable in an environment (dev, prod)
 - the `permission` gives the api gateway the authorization to invoke the lambda function
+- a `route` matches only the http method + path (e.g. `POST /hello`); the gateway doesn't validate anything else
+- query parameters, headers and body are passed through to the lambda untouched, so unexpected ones are silently accepted
+- a single `lambda` can serve several routes (e.g. GET /hello and POST /hello):
+  - one 'integration'
+  - one `route` resource per rout, pointing to the same `integration`
+  - the single lambda `handler` acts as a dispatcher on the http method (or on `getRouteKey()`)
 
 ## IAM Roles
 - `assume_role_policy` is the trust policy
