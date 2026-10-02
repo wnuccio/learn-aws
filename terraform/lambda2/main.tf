@@ -86,7 +86,7 @@ resource "random_password" "db" {
 
 resource "aws_db_instance" "main" {
   identifier             = "${lower(var.function_name)}-db"
-  engine                 = "postgres"I''
+  engine                 = "postgres"
   instance_class         = "db.t3.micro"
   allocated_storage      = 20
   storage_type           = "gp3"
@@ -165,7 +165,13 @@ resource "aws_apigatewayv2_integration" "helloworld2" {
   payload_format_version = "2.0"
 }
 
-resource "aws_apigatewayv2_route" "helloworld2" {
+resource "aws_apigatewayv2_route" "post_helloworld2" {
+  api_id    = aws_apigatewayv2_api.helloworld2.id
+  target    = "integrations/${aws_apigatewayv2_integration.helloworld2.id}"
+  route_key = "POST /hello"
+}
+
+resource "aws_apigatewayv2_route" "get_helloworld2" {
   api_id    = aws_apigatewayv2_api.helloworld2.id
   target    = "integrations/${aws_apigatewayv2_integration.helloworld2.id}"
   route_key = "GET /hello"
