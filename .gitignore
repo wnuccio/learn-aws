@@ -41,5 +41,5 @@ build/
 /dependency-reduced-pom.xml
 
 ### Terraform ###
-terraform/.terraform/
-terraform/terraform.tfstate*
+terraform/**/.terraform/
+terraform/**/terraform.tfstate*

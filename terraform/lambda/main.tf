@@ -70,7 +70,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb_policy" {
 }
 
 resource "aws_lambda_function" "helloworld" {
-  filename      = "../target/learn-aws.jar"
+  filename      = "../../target/learn-aws.jar"
   function_name = var.function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "org.example.lambda.HelloWorldHandler"
@@ -78,7 +78,7 @@ resource "aws_lambda_function" "helloworld" {
   timeout       = 30
   memory_size   = 1024
 
-  source_code_hash = filebase64sha256("../target/learn-aws.jar")
+  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
 
   environment {
     variables = {

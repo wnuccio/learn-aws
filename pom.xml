@@ -43,6 +43,13 @@
             <version>${aws-java-sdk.version}</version>
         </dependency>
 
+        <!-- PostgreSQL JDBC driver for RDS -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+
         <!-- SLF4J implementation for logging -->
         <dependency>
             <groupId>org.slf4j</groupId>

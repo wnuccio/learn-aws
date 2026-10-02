@@ -40,7 +40,7 @@ learn-aws/
 ---
 
 ### 4. Add an HTTP Trigger via API Gateway
-- [x] Add an API Gateway **HTTP API** in `terraform/main.tf`, with Lambda proxy integration
+- [x] Add an API Gateway **HTTP API** in `terraform/lambda/main.tf`, with Lambda proxy integration
 - [x] Add `aws_lambda_permission` so API Gateway is allowed to invoke the function
 - [x] Adapt `HelloWorldHandler` to accept `APIGatewayV2HTTPEvent` / return `APIGatewayV2HTTPResponse` (add the `aws-lambda-java-events` dependency); read `name` from the query string and keep the body as plain text — no JSON (un)marshalling needed
 - [x] `terraform apply`, then test the endpoint with `curl` (e.g. `curl "$API_URL/hello?name=World"`)
