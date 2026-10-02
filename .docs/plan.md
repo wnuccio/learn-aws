@@ -72,11 +72,11 @@ learn-aws/
 ---
 
 ### 7. RDS + VPC Basics
-- [ ] New Terraform root module (`terraform/rds/`) with a VPC, subnets, security group, and an `aws_db_instance`
-- [ ] Move/extend a Lambda into that VPC to read/write a simple table via JDBC
-- [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
+- [x] New Terraform root module (`terraform/lambda2/`) with a VPC, subnets, security group, and an `aws_db_instance`
+- [x] Move/extend a Lambda into that VPC to read/write a simple table via JDBC
+- [x] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
 
-**Status:** 🔮 Next up
+**Status:** ✅ Complete — Lambda in a private VPC reads/writes RDS PostgreSQL via JDBC, verified through API Gateway (module in `terraform/lambda2/`)
 
 ---
 
@@ -85,7 +85,7 @@ learn-aws/
 - [ ] A simple producer/consumer (Lambda-triggered-by-MSK)
 - [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
 
-**Status:** 🔮 Future work
+**Status:** 🔮 Next up
 
 ---
 
