@@ -61,13 +61,13 @@ learn-aws/
 ---
 
 ### 6. DynamoDB Basics
-- [ ] Add an `aws_dynamodb_table` in Terraform (e.g. partition key `id`)
-- [ ] Extend `HelloWorldHandler` to write an item to the table (e.g. `name` + timestamp), alongside or instead of the S3 write
-- [ ] Add IAM permissions (`dynamodb:PutItem`) to `lambda_role`
-- [ ] `terraform apply`, then `curl` the API Gateway endpoint and verify the item appears (console or `aws dynamodb scan`)
-- [ ] `terraform destroy` to close the loop
+- [x] Add an `aws_dynamodb_table` in Terraform (e.g. partition key `id`)
+- [x] Extend `HelloWorldHandler` to write an item to the table (e.g. `name` + timestamp), alongside or instead of the S3 write
+- [x] Add IAM permissions (`dynamodb:PutItem`) to `lambda_role`
+- [x] `terraform apply`, then `curl` the API Gateway endpoint and verify the item appears (console or `aws dynamodb scan`)
+- [x] `terraform destroy` to close the loop
 
-**Status:** 🔮 Next up
+**Status:** ✅ Complete — DynamoDB table wired to the Lambda, item write verified
 
 ---
 
@@ -76,7 +76,7 @@ learn-aws/
 - [ ] Move/extend a Lambda into that VPC to read/write a simple table via JDBC
 - [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
 
-**Status:** 🔮 Future work
+**Status:** 🔮 Next up
 
 ---
 
@@ -84,6 +84,16 @@ learn-aws/
 - [ ] New Terraform root module (`terraform/msk/`), likely MSK Serverless
 - [ ] A simple producer/consumer (Lambda-triggered-by-MSK)
 - [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
+
+**Status:** 🔮 Future work
+
+---
+
+### 9. Terragrunt
+- [ ] Add a `terragrunt.hcl` per root module (`terraform/`, `terraform/rds/`, `terraform/msk/`)
+- [ ] Factor shared provider/backend config into a root `terragrunt.hcl`, inherited via `include`
+- [ ] Replace `terraform apply`/`destroy` with `terragrunt apply`/`destroy` (and `run-all` across modules)
+- [ ] Compare: what Terragrunt buys over plain Terraform once there are 3 root modules (DRY config, remote state, orchestration)
 
 **Status:** 🔮 Future work
 

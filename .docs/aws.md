@@ -135,12 +135,12 @@
 └────────┼────────────────────────────────────────┘
          │ outbound only (NAT Gateway / VPC Endpoint)
          ▼
-   S3  (outside VPC, public endpoint)
+ S3 / DynamoDB  (outside VPC, public endpoints)
 ```
-- API Gateway and S3 are outside the VPC; Lambda and RDS are inside, each in a private subnet
+- API Gateway, S3 and DynamoDB are outside the VPC; Lambda and RDS are inside, each in a private subnet
 - gateway → lambda: control-plane invocation, no VPC networking involved
 - lambda → RDS: real network traffic (JDBC/TCP), gated by security groups
-- lambda → S3: also outside the VPC, so it needs a NAT Gateway or VPC Endpoint once the Lambda is VPC-attached
+- lambda → S3 / DynamoDB: also outside the VPC, so each needs a NAT Gateway or VPC Endpoint once the Lambda is VPC-attached
 
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
