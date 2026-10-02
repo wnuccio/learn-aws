@@ -7,6 +7,8 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 @SuppressWarnings("unused")
 public class HelloWorld2Handler implements RequestHandler<APIGatewayV2HTTPEvent, APIGatewayV2HTTPResponse> {
 
@@ -17,6 +19,42 @@ public class HelloWorld2Handler implements RequestHandler<APIGatewayV2HTTPEvent,
 
     @Override
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
+        String method = event.getRequestContext().getHttp().getMethod();
+        if (method.equals("GET")) {
+            return handleGet();
+        } else if (method.equals("POST")) {
+            return handlePost(event);
+        } else {
+            log.warn("unsupported method: {}", method);
+            return APIGatewayV2HTTPResponse.builder()
+                    .withStatusCode(405)
+                    .withBody("Method Not Allowed")
+                    .build();
+        }
+    }
+
+    private APIGatewayV2HTTPResponse handleGet() {
+        try {
+            List<String> messages = helloWorld2.getAllMessagesOrdered();
+            log.info("retrieved {} messages", messages.size());
+
+            String body = "Stored messages: \n" + String.join("\n", messages);
+
+            return APIGatewayV2HTTPResponse.builder()
+                    .withStatusCode(200)
+                    .withBody(body)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("failed to retrieve messages", e);
+            return APIGatewayV2HTTPResponse.builder()
+                    .withStatusCode(500)
+                    .withBody("Error: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    private APIGatewayV2HTTPResponse handlePost(APIGatewayV2HTTPEvent event) {
         try {
             String name = event.getQueryStringParameters() != null
                     ? event.getQueryStringParameters().get("name")
