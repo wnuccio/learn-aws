@@ -150,6 +150,52 @@
 - lambda → RDS: real network traffic (JDBC/TCP), gated by security groups
 - lambda → S3 / DynamoDB: also outside the VPC, so each needs a NAT Gateway or VPC Endpoint once the Lambda is VPC-attached
 
+## MSK (Managed Streaming for Kafka)
+- AWS manages the Kafka cluster (brokers, Zookeeper, etc.) 
+- a `topic` is split in partitions
+- the producer picks the partition via the message `key` (hashed): same key → same partition;
+- each `partition` is an append-only log; every message gets an increasing `offset`; 
+- consumers read in offset order; order of messages is then guaranteed within a partition
+- to keep related events in order (e.g. all events of a `userId`), use that id as the key
+- a `consumer group` is a set of consumers sharing a `group.id`, reading a topic together
+- **each partition is assigned to exactly one consumer** in the group (but a consumer can hold many partitions)
+- a message is processed by one consumer per group; another group with a different `group.id` gets its own full copy of the stream
+- within a group, consumers are `competing consumers` but they compete for partitions, not for single messages 
+  - in fact, within each partition there is only one consumer, to ensure correct order in processing
+- parallelism limit: with 3 partitions, at most 3 consumers in a group work; a fourth stays idle
+- `rebalancing`: when a consumer joins, leaves or crashes, the group coordinator (a broker) reassigns the partitions
+- each group tracks its committed offset per partition (stored in Kafka itself); after a restart it resumes from there
+- with a Lambda event source mapping, Lambda is the consumer group: it polls the topic and invokes the function with a batch of records
+  - a batch has records from one or more partitions, ordered within each partition
+  - offsets are committed after the function succeeds; on exception the batch is retried → at-least-once, so the consumer must tolerate duplicates
+
+```
+                         Topic "orders" (3 partitions)
+        ┌──────────────────────────────────────────────────────────┐
+        │ P0: [0][1][2][3][4] ...   keys hashed to P0 (e.g. john)  │
+        │ P1: [0][1][2] ...         keys hashed to P1 (e.g. mary)  │
+        │ P2: [0][1][2][3] ...      keys hashed to P2 (e.g. anna)  │
+        └──────────────────────────────────────────────────────────┘
+              ▲                ▲                ▲
+              │ append         │ append         │ append
+          (key=john)       (key=mary)       (key=anna)
+                         Producer(s)
+
+
+   Consumer group A (group.id = "billing")      Consumer group B (group.id = "audit")
+   each partition → exactly one consumer        its own independent copy of the stream
+
+        P0 ─────▶ Consumer A1                        P0 ┐
+        P1 ─────▶ Consumer A2                        P1 ├─▶ Consumer B1
+        P2 ─────▶ Consumer A2                        P2 ┘
+```
+- a key always hashes to the same partition, so `john`'s events stay in order in P0
+- group A: 3 partitions shared between 2 consumers (A1 holds P0, A2 holds P1 and P2); a partition is never split between two consumers of the same group, which preserves its ordering
+- group B: different `group.id`, so it receives all the messages again (here a single consumer holds all three partitions)
+- rebalance: if A2 crashes, P1 and P2 move to A1; if a third consumer joins group A, one partition moves to it; a fourth would stay idle (only 3 partitions)
+- each group keeps its own committed offset per partition (A can be at offset 3 on P0 while B is at offset 1)
+- the MSK-triggered Lambda plays the role of group A: Lambda manages the group and the assignment, the function only receives batches
+
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
 - **Add logs at boundaries**: log before and after each major operation (S3 write, response building, etc.)
