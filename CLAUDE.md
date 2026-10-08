@@ -99,6 +99,27 @@ This project uses JUnit for testing. When dependencies are added:
   - instantiate a new `TestContext` directly inside each `@Test` method; do not use `@BeforeEach`
 - use full variable name `context`, not `ctx`;
 
+## Working Style
+
+- **Shell commands:** ask before running any state-changing command, and propose the exact command first
+  - read-only commands (e.g. `grep`, `ls`, `git status`) don't need confirmation
+  - "can I do X" / "how would I undo Y" questions are requests for information: explain, don't execute
+  - run it only after an explicit go-ahead, unless I clearly asked you to just do it
+- **File edits:** apply code/doc changes directly with Edit/Write; the manual-mode approve/reject prompt is the review step
+  - build incrementally, one piece at a time (one Terraform resource, one class), and pause for my go-ahead before the next
+  - if edits ever apply without a prompt, tell me to check the permission mode (`Shift+Tab`)
+- **Guided mode:** when I say I'll implement something myself and ask to be driven, don't edit files
+  - one very small step at a time, described in words only (names, behavior, signatures), one or two sentences
+  - no code blocks unless I explicitly ask; check my change before the next step
+- **`.docs/aws.md`:** one short line per idea, matching the existing bullet style; no rationale or inferable sub-bullets
+  - it's a personal lookup table; explanation belongs in chat, not in the file
+
+## Session Continuity
+
+- At the start of a session, read `.docs/plan.md` and summarize the current step and any pending items
+- Also suggest recovering the previous session with `claude --continue` (most recent) or `claude --resume` (pick one), in case its context matters
+- At the end of a session, offer to update `plan.md` and save pending items to memory
+
 ## Notes for Future Development
 
 - As AWS features are added, ensure proper credential handling (never commit real AWS credentials)
