@@ -106,13 +106,15 @@
   - the prefix fixes the left bits (network part), the rest vary (host addresses); 
   - e.g.: `10.0.0.0/24` → from `10.0.0.0` to `10.0.0.255`
 - VPC networking applies to resources with a network interface in a subnet (EC2, RDS, Lambda only if explicitly VPC-attached)
+- an ENI (network interface) is the address assigned to a resource within a subnet, plus the firewall (security groups) applied to traffic to and from that address
+  - a resource can have more than one ENI (e.g. one per subnet)
 - many AWS services (S3, Lambda by default, DynamoDB) have their own public API endpoint and live outside any VPC
 - a `subnet` lives inside a VPC
   - a public subnet
     - has route table which sends `0.0.0.0/0` to an Internet Gateway, 
     - a resource within it still needs its own public IP to actually be reachable from outside
   - a private subnet 
-    - has route table which no route to the Internet Gateway (or a NAT Gateway)
+    - has route table which no route to the Internet Gateway
     - can still get outbound internet access via a NAT Gateway; inbound from the internet stays blocked
 - security group: 
   - a set of inbound/outbound rules (protocol + port + source/destination) attached to a resource's network interface; 
