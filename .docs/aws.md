@@ -122,6 +122,21 @@
   - govern raw network traffic (e.g. a JDBC connection) through packet filtering
   - different from IAM, which is identity-based and governs calls to AWS APIs (`s3:PutObject`, `lambda:InvokeFunction`); 
 
+### Subnets and availability zones
+```
+Region eu-west-3
+├── AZ eu-west-3a
+│   ├── subnet 10.0.0.0/25    (private)
+│   └── subnet 10.0.1.0/24    (public)     ← allowed: several subnets in one AZ
+└── AZ eu-west-3b
+    └── subnet 10.0.0.128/25  (private)
+```
+- a VPC spans the whole region;
+- an AZ is a physically separate data center in a region
+- **a subnet belongs to exactly one AZ**; an AZ can contain many subnets (many-to-one)
+- subnets of the same VPC can't overlap in address range
+- MSK and RDS need subnets in at least two AZs; subnets cost nothing
+
 ### Architecture
 ```
          (public internet)
