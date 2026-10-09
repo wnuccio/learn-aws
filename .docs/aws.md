@@ -215,6 +215,17 @@ Region eu-west-3
 - each group keeps its own committed offset per partition (A can be at offset 3 on P0 while B is at offset 1)
 - the MSK-triggered Lambda plays the role of group A: Lambda manages the group and the assignment, the function only receives batches
 
+### MSK with Lambda: issues and lessons
+- MSK Serverless has no topic auto-creation and Terraform can't reach the private cluster: the producer creates the topic with `AdminClient`
+- the event source mapping polls through an ENI that uses the cluster's subnets and security group, not the Lambda's
+  - the cluster security group needs self-referencing rules on 9098 (inbound and outbound)
+- the mapping polls with the function's execution role, so no `aws_lambda_permission` is needed
+  - IAM auth needs `kafka-cluster:Connect`, `DescribeTopic`, `ReadData`, `DescribeGroup`, `AlterGroup` on the role, plus `AWSLambdaMSKExecutionRole`
+- provisioned mode (`provisioned_poller_config`) needs no NAT or VPC endpoints; on-demand mode does (Lambda, STS)
+- `kafka-clients` brings `slf4j-api` 1.7.x: pin 2.x or `slf4j-simple` 2.x finds no binder and every log line is dropped
+- a mapping stuck in `Creating` can't be deleted: `terraform destroy` fails until it leaves that state
+  - workaround: `terraform state rm` the mapping, then `destroy` the rest
+
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
 - **Add logs at boundaries**: log before and after each major operation (S3 write, response building, etc.)

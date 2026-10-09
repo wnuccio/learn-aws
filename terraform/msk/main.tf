@@ -67,6 +67,24 @@ resource "aws_vpc_security_group_ingress_rule" "msk_from_lambda" {
   to_port                      = 9098
 }
 
+# The event source mapping reaches the brokers through an ENI that uses the cluster's security group, not the Lambda's,
+# so the cluster group needs self-referencing rules on the broker port
+resource "aws_vpc_security_group_ingress_rule" "msk_from_msk" {
+  security_group_id            = aws_security_group.msk.id
+  referenced_security_group_id = aws_security_group.msk.id
+  ip_protocol                  = "tcp"
+  from_port                    = 9098
+  to_port                      = 9098
+}
+
+resource "aws_vpc_security_group_egress_rule" "msk_to_msk" {
+  security_group_id            = aws_security_group.msk.id
+  referenced_security_group_id = aws_security_group.msk.id
+  ip_protocol                  = "tcp"
+  from_port                    = 9098
+  to_port                      = 9098
+}
+
 # --- MSK -------------------------------------------------------------------
 # Serverless: no brokers to size. Billed hourly plus per partition and per GB,
 # so run `terraform destroy` right after testing.
@@ -225,5 +243,109 @@ resource "aws_lambda_function" "producer" {
     aws_cloudwatch_log_group.producer,
     aws_iam_role_policy_attachment.producer_vpc_execution,
     aws_iam_role_policy.producer_kafka
+  ]
+}
+
+# --- Consumer Lambda -------------------------------------------------------
+
+resource "aws_iam_role" "consumer_role" {
+  name = "${var.name}-consumer-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Logs, the cluster lookups the event source mapping needs (kafka:Describe*, kafka:GetBootstrapBrokers) and the ENI permissions
+resource "aws_iam_role_policy_attachment" "consumer_msk_execution" {
+  role       = aws_iam_role.consumer_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaMSKExecutionRole"
+}
+
+# The event source mapping polls Kafka with this role, so it needs the consumer-side IAM auth actions.
+# Topic and group ARNs are built from the cluster ARN like the producer's topic ARN.
+resource "aws_iam_role_policy" "consumer_kafka" {
+  name = "${var.name}-consumer-kafka"
+  role = aws_iam_role.consumer_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "kafka-cluster:Connect"
+        Resource = aws_msk_serverless_cluster.main.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:DescribeTopic",
+          "kafka-cluster:ReadData"
+        ]
+        Resource = "${replace(aws_msk_serverless_cluster.main.arn, ":cluster/", ":topic/")}/*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:DescribeGroup",
+          "kafka-cluster:AlterGroup"
+        ]
+        Resource = "${replace(aws_msk_serverless_cluster.main.arn, ":cluster/", ":group/")}/*"
+      }
+    ]
+  })
+}
+
+resource "aws_cloudwatch_log_group" "consumer" {
+  name              = "/aws/lambda/${var.name}-consumer"
+  retention_in_days = 7
+}
+
+# Not VPC-attached: the event source mapping polls Kafka and invokes the function through the Lambda service,
+# and the function only logs what it receives
+resource "aws_lambda_function" "consumer" {
+  filename      = "../../target/learn-aws.jar"
+  function_name = "${var.name}-consumer"
+  role          = aws_iam_role.consumer_role.arn
+  handler       = "org.example.msk.ConsumerHandler"
+  runtime       = "java17"
+  timeout       = 30
+  memory_size   = 1024
+
+  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+
+  depends_on = [
+    aws_cloudwatch_log_group.consumer,
+    aws_iam_role_policy_attachment.consumer_msk_execution,
+    aws_iam_role_policy.consumer_kafka
+  ]
+}
+
+# The mapping polls the topic with the consumer role and invokes the function with batches of records.
+# The provisioned_poller_config block switches it to provisioned mode: no NAT or VPC endpoints needed.
+# TRIM_HORIZON because the topic is created by the first producer call, possibly after the mapping exists.
+resource "aws_lambda_event_source_mapping" "consumer" {
+  event_source_arn  = aws_msk_serverless_cluster.main.arn
+  function_name     = aws_lambda_function.consumer.arn
+  topics            = [var.topic]
+  starting_position = "TRIM_HORIZON"
+
+  provisioned_poller_config {
+    minimum_pollers = 1
+    maximum_pollers = 2
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.consumer_msk_execution,
+    aws_iam_role_policy.consumer_kafka
   ]
 }
