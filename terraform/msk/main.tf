@@ -87,3 +87,57 @@ resource "aws_msk_serverless_cluster" "main" {
     }
   }
 }
+
+# --- Producer Lambda -------------------------------------------------------
+
+resource "aws_iam_role" "producer_role" {
+  name = "${var.name}-producer-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Includes the ENI permissions Lambda needs to attach to the VPC
+resource "aws_iam_role_policy_attachment" "producer_vpc_execution" {
+  role       = aws_iam_role.producer_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+# The topic ARN is built from the cluster ARN by swapping ":cluster/" for ":topic/", then appending "/*" to cover every topic
+resource "aws_iam_role_policy" "producer_kafka" {
+  name = "${var.name}-producer-kafka"
+  role = aws_iam_role.producer_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:Connect",
+          "kafka-cluster:WriteDataIdempotently"
+        ]
+        Resource = aws_msk_serverless_cluster.main.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:CreateTopic",
+          "kafka-cluster:DescribeTopic",
+          "kafka-cluster:WriteData"
+        ]
+        Resource = "${replace(aws_msk_serverless_cluster.main.arn, ":cluster/", ":topic/")}/*"
+      }
+    ]
+  })
+}

@@ -183,6 +183,8 @@ Region eu-west-3
 - with a Lambda event source mapping, Lambda is the consumer group: it polls the topic and invokes the function with a batch of records
   - a batch has records from one or more partitions, ordered within each partition
   - offsets are committed after the function succeeds; on exception the batch is retried → at-least-once, so the consumer must tolerate duplicates
+- `event source mapping`: a Lambda resource that reads items from stream and queue-based services and invokes a function with batches of records
+- `event pollers`: resources within an event source mapping that actively poll for new messages and invoke the function
 
 ```
                          Topic "orders" (3 partitions)

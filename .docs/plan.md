@@ -81,11 +81,17 @@ learn-aws/
 ---
 
 ### 8. MSK Basics
-- [ ] New Terraform root module (`terraform/msk/`), likely MSK Serverless
-- [ ] A simple producer/consumer (Lambda-triggered-by-MSK)
+- [x] New Terraform root module (`terraform/msk/`), likely MSK Serverless
+  - [x] provider + region (`eu-west-3` supports MSK Serverless), private VPC with two subnets, security groups (Lambda ↔ MSK on 9098), `aws_msk_serverless_cluster` with IAM auth
+- [ ] A simple producer/consumer: producer Lambda behind API Gateway (`POST` writes to a topic), consumer Lambda triggered by MSK (event source mapping) that logs what it reads
 - [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
 
-**Status:** 🔮 Next up
+**Status:** 🚧 In progress — `terraform/msk/` has network + cluster (init/validate/plan/commit done by the user)
+
+**Pending / open points:**
+- topics aren't created by Terraform on MSK Serverless: decide how the topic gets created (admin client call from the producer Lambda?); verify before writing the Lambda code
+- the VPC-attached consumer Lambda may need to reach STS/other AWS services from the private VPC (NAT or VPC endpoints, which cost money): check the requirements
+- next piece: producer Lambda + its IAM role (`kafka-cluster:*` permissions, VPC ENI permissions), then API Gateway, then the consumer Lambda
 
 ---
 
