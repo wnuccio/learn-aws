@@ -8,14 +8,6 @@ public class Producer {
     }
 
     public void sendMessage(String key, String value) {
-        if (key == null || key.isBlank()) {
-            throw new IllegalArgumentException("Message key cannot be blank");
-        }
-
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Message value cannot be blank");
-        }
-
-        messageProducer.send(key, value);
+        messageProducer.send(new Message(key, value));
     }
 }

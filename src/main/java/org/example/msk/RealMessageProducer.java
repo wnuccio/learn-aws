@@ -37,10 +37,10 @@ public class RealMessageProducer implements MessageProducer {
     }
 
     @Override
-    public void send(String key, String value) {
+    public void send(Message message) {
         try {
             // wait for the broker acknowledgement, so failures surface before the HTTP response
-            producer.send(new ProducerRecord<>(topic, key, value)).get();
+            producer.send(new ProducerRecord<>(topic, message.key(), message.value())).get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrupted while sending to topic " + topic, e);

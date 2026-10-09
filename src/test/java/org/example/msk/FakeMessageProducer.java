@@ -5,8 +5,8 @@ public class FakeMessageProducer implements MessageProducer {
     private Message lastSentMessage;
 
     @Override
-    public void send(String key, String value) {
-        lastSentMessage = new Message(key, value);
+    public void send(Message message) {
+        lastSentMessage = message;
     }
 
     public Message getLastSentMessage() {
