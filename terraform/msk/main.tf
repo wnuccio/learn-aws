@@ -141,3 +141,89 @@ resource "aws_iam_role_policy" "producer_kafka" {
     ]
   })
 }
+
+# --- API Gateway -----------------------------------------------------------
+
+resource "aws_apigatewayv2_api" "producer" {
+  name          = "${var.name}-producer-api"
+  protocol_type = "HTTP"
+}
+
+resource "aws_apigatewayv2_integration" "producer" {
+  api_id                 = aws_apigatewayv2_api.producer.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = aws_lambda_function.producer.invoke_arn
+  payload_format_version = "2.0"
+}
+
+resource "aws_apigatewayv2_route" "post_messages" {
+  api_id    = aws_apigatewayv2_api.producer.id
+  target    = "integrations/${aws_apigatewayv2_integration.producer.id}"
+  route_key = "POST /messages"
+}
+
+resource "aws_lambda_permission" "api_gateway" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.producer.function_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.producer.execution_arn}/*/*"
+}
+
+resource "aws_apigatewayv2_stage" "default" {
+  api_id      = aws_apigatewayv2_api.producer.id
+  name        = "$default"
+  auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway.arn
+    format = jsonencode({
+      requestId               = "$context.requestId"
+      routeKey                = "$context.routeKey"
+      status                  = "$context.status"
+      integrationErrorMessage = "$context.integration.error"
+    })
+  }
+}
+
+resource "aws_cloudwatch_log_group" "api_gateway" {
+  name              = "/aws/apigateway/${var.name}-producer"
+  retention_in_days = 7
+}
+
+# Managed here so that `terraform destroy` removes the logs too
+resource "aws_cloudwatch_log_group" "producer" {
+  name              = "/aws/lambda/${var.name}-producer"
+  retention_in_days = 7
+}
+
+# The first call on a cold container creates the topic and opens the Kafka connection, hence the generous timeout
+resource "aws_lambda_function" "producer" {
+  filename      = "../../target/learn-aws.jar"
+  function_name = "${var.name}-producer"
+  role          = aws_iam_role.producer_role.arn
+  handler       = "org.example.msk.ProducerHandler"
+  runtime       = "java17"
+  timeout       = 60
+  memory_size   = 1024
+
+  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+
+  vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+
+  environment {
+    variables = {
+      BOOTSTRAP_SERVERS = aws_msk_serverless_cluster.main.bootstrap_brokers_sasl_iam
+      TOPIC             = var.topic
+    }
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.producer,
+    aws_iam_role_policy_attachment.producer_vpc_execution,
+    aws_iam_role_policy.producer_kafka
+  ]
+}

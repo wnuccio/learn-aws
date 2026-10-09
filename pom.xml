@@ -50,6 +50,19 @@
             <version>42.7.3</version>
         </dependency>
 
+        <!-- Kafka client and the IAM auth callback handler for MSK; kept on 3.x, the line the IAM library is built against -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>3.9.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>software.amazon.msk</groupId>
+            <artifactId>aws-msk-iam-auth</artifactId>
+            <version>2.3.9</version>
+        </dependency>
+
         <!-- SLF4J implementation for logging -->
         <dependency>
             <groupId>org.slf4j</groupId>

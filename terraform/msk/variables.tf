@@ -4,6 +4,12 @@ variable "aws_region" {
   default     = "eu-west-3"
 }
 
+variable "topic" {
+  description = "Kafka topic the producer writes to (created by the producer Lambda on start)"
+  type        = string
+  default     = "messages"
+}
+
 variable "name" {
   description = "Name prefix for the resources"
   type        = string
