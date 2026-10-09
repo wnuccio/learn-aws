@@ -175,16 +175,18 @@ Region eu-west-3
 - a `consumer group` is a set of consumers sharing a `group.id`, reading a topic together
 - **each partition is assigned to exactly one consumer** in the group (but a consumer can hold many partitions)
 - a message is processed by one consumer per group; another group with a different `group.id` gets its own full copy of the stream
-- within a group, consumers are `competing consumers` but they compete for partitions, not for single messages 
+- within a group, consumers are `competing consumers` but they compete for partitions, not for single messages
   - in fact, within each partition there is only one consumer, to ensure correct order in processing
 - parallelism limit: with 3 partitions, at most 3 consumers in a group work; a fourth stays idle
 - `rebalancing`: when a consumer joins, leaves or crashes, the group coordinator (a broker) reassigns the partitions
 - each group tracks its committed offset per partition (stored in Kafka itself); after a restart it resumes from there
-- with a Lambda event source mapping, Lambda is the consumer group: it polls the topic and invokes the function with a batch of records
-  - a batch has records from one or more partitions, ordered within each partition
-  - offsets are committed after the function succeeds; on exception the batch is retried → at-least-once, so the consumer must tolerate duplicates
-- `event source mapping`: a Lambda resource that reads items from stream and queue-based services and invokes a function with batches of records
-- `event pollers`: resources within an event source mapping that actively poll for new messages and invoke the function
+- with a Lambda event source mapping, Lambda is the consumer group:
+  - the `event source mapping` resource sets one `topic`
+  - it polls the topic (via the so-called event pollers) and invokes the function with a batch of records
+  - the `batch` is a Map<"topic-partition", List<Record>>, so it may contain any partition from the topic
+  - in each `partition`, the `records` are in offset order
+  - `offsets` are committed after the function succeeds
+  - on exception the batch is retried → at-least-once, so the consumer must tolerate duplicates
 
 ```
                          Topic "orders" (3 partitions)
