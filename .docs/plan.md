@@ -84,8 +84,9 @@ learn-aws/
 - [x] New Terraform root module (`terraform/msk/`), likely MSK Serverless
   - [x] provider + region (`eu-west-3` supports MSK Serverless), private VPC with two subnets, security groups (Lambda ↔ MSK on 9098), `aws_msk_serverless_cluster` with IAM auth
 - [x] A simple producer/consumer: producer Lambda behind API Gateway (`POST` writes to a topic), consumer Lambda triggered by MSK (event source mapping) that logs what it reads
-  - [x] code in `org.example.msk` (`Producer`, `Message`, `ProducerHandler`, `RealMessageProducer`, `ConsumerHandler`); topic created by the producer Lambda (`AdminClient`, 2 partitions)
-  - [x] Terraform: producer and consumer roles/functions/log groups, API Gateway, event source mapping in provisioned mode (no NAT/endpoints)
+  - [x] code in `org.example.msk` (`Producer`, `Message`, `ProducerHandler`, `RealMessageProducer`, `ConsumerHandler`, `CreateTopicHandler`, `TopicCreator`); 
+  - [x] topic created at apply time by a dedicated Lambda (`AdminClient`, 2 partitions)
+  - [x] Terraform: producer, consumer and topic-creator roles/functions (one shared Lambda log group), API Gateway, `aws_lambda_invocation` that creates the topic, event source mapping in provisioned mode (no NAT/endpoints) depending on the invocation
 - [ ] `terraform apply`, test, **`terraform destroy` immediately after** (billed hourly regardless of use)
 
 **Status:** 🚧 In progress — everything is written; first apply done, the producer returned `Sent` but the mapping stuck in `Creating`, so the consumer path is still unverified; all destroyed
@@ -94,7 +95,8 @@ learn-aws/
 - re-run apply and test with the two fixes below (`mvn clean package` first); check the mapping reaches `Enabled` and the consumer log shows `received messages-N ...`
   - fix 1: self-referencing 9098 ingress/egress rules on `msk-sg` (the mapping's ENI uses the cluster's security group, not the Lambda's)
   - fix 2: `slf4j-api` 2.0.7 pinned in `pom.xml` (`kafka-clients` brought 1.7.x, which silently dropped all logs)
-- the mapping may be created before the topic exists (the producer creates it on its first call): if it stays in `Creating`, find a way to create the topic first
+- the topic is now created during `apply` by the topic-creator Lambda (`aws_lambda_invocation`), before the mapping: check that the invocation really runs first and that a function error fails the apply
+- unconfirmed: the default `lifecycle_scope` of the invocation (believed `CREATE_ONLY`) and whether the consumer can stay outside the VPC
 - orphan mapping `03126fa0-0762-40ab-835b-bf09f4a52acf` (eu-west-3) was stuck in `Creating`; it moved to `Disabled` after a day and was deleted on 2026-10-10; check Billing for stray costs
 - lesson: a mapping in `Creating` can't be deleted, so a failed apply can block `terraform destroy`; recovery was `terraform state rm` on the mapping, then `destroy`
 

@@ -3,7 +3,7 @@ output "api_invoke_url" {
   value       = aws_apigatewayv2_stage.default.invoke_url
 }
 
-output "producer_log_group" {
-  description = "CloudWatch log group for the producer Lambda"
-  value       = aws_cloudwatch_log_group.producer.name
+output "lambda_log_group" {
+  description = "CloudWatch log group shared by the Lambdas"
+  value       = aws_cloudwatch_log_group.lambda.name
 }

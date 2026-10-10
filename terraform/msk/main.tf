@@ -150,7 +150,6 @@ resource "aws_iam_role_policy" "producer_kafka" {
       {
         Effect = "Allow"
         Action = [
-          "kafka-cluster:CreateTopic",
           "kafka-cluster:DescribeTopic",
           "kafka-cluster:WriteData"
         ]
@@ -209,13 +208,14 @@ resource "aws_cloudwatch_log_group" "api_gateway" {
   retention_in_days = 7
 }
 
+# Shared by the three Lambdas (each one writes to its own log streams).
 # Managed here so that `terraform destroy` removes the logs too
-resource "aws_cloudwatch_log_group" "producer" {
-  name              = "/aws/lambda/${var.name}-producer"
+resource "aws_cloudwatch_log_group" "lambda" {
+  name              = "/aws/lambda/${var.name}"
   retention_in_days = 7
 }
 
-# The first call on a cold container creates the topic and opens the Kafka connection, hence the generous timeout
+# The first call on a cold container opens the Kafka connection, hence the generous timeout
 resource "aws_lambda_function" "producer" {
   filename      = "../../target/learn-aws.jar"
   function_name = "${var.name}-producer"
@@ -239,10 +239,114 @@ resource "aws_lambda_function" "producer" {
     }
   }
 
+  logging_config {
+    log_format = "Text"
+    log_group  = aws_cloudwatch_log_group.lambda.name
+  }
+
   depends_on = [
-    aws_cloudwatch_log_group.producer,
+    aws_cloudwatch_log_group.lambda,
     aws_iam_role_policy_attachment.producer_vpc_execution,
     aws_iam_role_policy.producer_kafka
+  ]
+}
+
+# --- Topic creator Lambda --------------------------------------------------
+# Invoked once by Terraform during apply, so the topic exists before the event source mapping is created.
+
+resource "aws_iam_role" "topic_creator_role" {
+  name = "${var.name}-topic-creator-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "lambda.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# Includes the ENI permissions Lambda needs to attach to the VPC
+resource "aws_iam_role_policy_attachment" "topic_creator_vpc_execution" {
+  role       = aws_iam_role.topic_creator_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
+resource "aws_iam_role_policy" "topic_creator_kafka" {
+  name = "${var.name}-topic-creator-kafka"
+  role = aws_iam_role.topic_creator_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "kafka-cluster:Connect"
+        Resource = aws_msk_serverless_cluster.main.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "kafka-cluster:CreateTopic",
+          "kafka-cluster:DescribeTopic"
+        ]
+        Resource = "${replace(aws_msk_serverless_cluster.main.arn, ":cluster/", ":topic/")}/*"
+      }
+    ]
+  })
+}
+
+# Needs the VPC: the topic is created over the Kafka protocol, which is only reachable from inside it
+resource "aws_lambda_function" "topic_creator" {
+  filename      = "../../target/learn-aws.jar"
+  function_name = "${var.name}-topic-creator"
+  role          = aws_iam_role.topic_creator_role.arn
+  handler       = "org.example.msk.CreateTopicHandler"
+  runtime       = "java17"
+  timeout       = 60
+  memory_size   = 1024
+
+  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+
+  vpc_config {
+    subnet_ids         = aws_subnet.private[*].id
+    security_group_ids = [aws_security_group.lambda.id]
+  }
+
+  environment {
+    variables = {
+      BOOTSTRAP_SERVERS = aws_msk_serverless_cluster.main.bootstrap_brokers_sasl_iam
+      TOPIC             = var.topic
+    }
+  }
+
+  logging_config {
+    log_format = "Text"
+    log_group  = aws_cloudwatch_log_group.lambda.name
+  }
+
+  depends_on = [
+    aws_cloudwatch_log_group.lambda,
+    aws_iam_role_policy_attachment.topic_creator_vpc_execution,
+    aws_iam_role_policy.topic_creator_kafka
+  ]
+}
+
+# Runs the function during apply and fails the apply if it fails. The handler ignores the event,
+# and creating a topic that already exists is not an error, so a repeated invocation is harmless.
+resource "aws_lambda_invocation" "create_topic" {
+  function_name = aws_lambda_function.topic_creator.function_name
+  input         = jsonencode({})
+
+  # the function must be able to reach the cluster when it runs
+  depends_on = [
+    aws_vpc_security_group_egress_rule.lambda_to_msk,
+    aws_vpc_security_group_ingress_rule.msk_from_lambda
   ]
 }
 
@@ -305,11 +409,6 @@ resource "aws_iam_role_policy" "consumer_kafka" {
   })
 }
 
-resource "aws_cloudwatch_log_group" "consumer" {
-  name              = "/aws/lambda/${var.name}-consumer"
-  retention_in_days = 7
-}
-
 # Not VPC-attached: the event source mapping polls Kafka and invokes the function through the Lambda service,
 # and the function only logs what it receives
 resource "aws_lambda_function" "consumer" {
@@ -323,8 +422,13 @@ resource "aws_lambda_function" "consumer" {
 
   source_code_hash = filebase64sha256("../../target/learn-aws.jar")
 
+  logging_config {
+    log_format = "Text"
+    log_group  = aws_cloudwatch_log_group.lambda.name
+  }
+
   depends_on = [
-    aws_cloudwatch_log_group.consumer,
+    aws_cloudwatch_log_group.lambda,
     aws_iam_role_policy_attachment.consumer_msk_execution,
     aws_iam_role_policy.consumer_kafka
   ]
@@ -332,7 +436,8 @@ resource "aws_lambda_function" "consumer" {
 
 # The mapping polls the topic with the consumer role and invokes the function with batches of records.
 # The provisioned_poller_config block switches it to provisioned mode: no NAT or VPC endpoints needed.
-# TRIM_HORIZON because the topic is created by the first producer call, possibly after the mapping exists.
+# The topic must exist before the mapping is created, hence the dependency on the invocation that creates it.
+# TRIM_HORIZON so that no record is missed if the producer writes before the poller starts.
 resource "aws_lambda_event_source_mapping" "consumer" {
   event_source_arn  = aws_msk_serverless_cluster.main.arn
   function_name     = aws_lambda_function.consumer.arn
@@ -345,6 +450,7 @@ resource "aws_lambda_event_source_mapping" "consumer" {
   }
 
   depends_on = [
+    aws_lambda_invocation.create_topic,
     aws_iam_role_policy_attachment.consumer_msk_execution,
     aws_iam_role_policy.consumer_kafka
   ]

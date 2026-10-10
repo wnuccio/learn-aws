@@ -180,8 +180,10 @@ Region eu-west-3
 - parallelism limit: with 3 partitions, at most 3 consumers in a group work; a fourth stays idle
 - `rebalancing`: when a consumer joins, leaves or crashes, the group coordinator (a broker) reassigns the partitions
 - each group tracks its committed offset per partition (stored in Kafka itself); after a restart it resumes from there
+
+### Lambda as the consumer
 - with a Lambda event source mapping, Lambda is the consumer group:
-  - the `event source mapping` resource sets one `topic`
+  - the `event source mapping` resource listens to one `topic`
   - it polls the topic (via the so-called event pollers) and invokes the function with a batch of records
   - the `batch` is a Map<"topic-partition", List<Record>>, so it may contain any partition from the topic
   - in each `partition`, the `records` are in offset order
@@ -215,8 +217,14 @@ Region eu-west-3
 - each group keeps its own committed offset per partition (A can be at offset 3 on P0 while B is at offset 1)
 - the MSK-triggered Lambda plays the role of group A: Lambda manages the group and the assignment, the function only receives batches
 
-### MSK with Lambda: issues and lessons
-- MSK Serverless has no topic auto-creation and Terraform can't reach the private cluster: the producer creates the topic with `AdminClient`
+### MSK with Lambdas
+- There are three Lambdas: 
+  - the `topic creator` runs once at `apply`, thanks to `aws_lambda_invocation` resource
+  - the `producer` writes to it on each `POST`
+  - the `consumer` is triggered by the `mapping` on the topic and writes on the `logs` 
+- MSK Serverless has no topic auto-creation
+- a topic is data inside the cluster, is not an AWS resource: Terraform can't create it
+  - workaround: a Lambda in the VPC creates it with `AdminClient`, invoked by `aws_lambda_invocation` during `apply`
 - the event source mapping polls through an ENI that uses the cluster's subnets and security group, not the Lambda's
   - the cluster security group needs self-referencing rules on 9098 (inbound and outbound)
 - the mapping polls with the function's execution role, so no `aws_lambda_permission` is needed
