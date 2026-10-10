@@ -36,7 +36,6 @@ public class ProducerHandler implements RequestHandler<APIGatewayV2HTTPEvent, AP
         } catch (IllegalArgumentException e) {
             log.warn("invalid request: {}", e.getMessage());
             return response(400, "Error: " + e.getMessage());
-
         } catch (Exception e) {
             log.error("failed to send message", e);
             return response(500, "Error: " + e.getMessage());

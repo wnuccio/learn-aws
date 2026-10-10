@@ -99,6 +99,7 @@ This project uses JUnit for testing. When dependencies are added:
   - instantiate a new `TestContext` directly inside each `@Test` method; do not use `@BeforeEach`
 - use full variable name `context`, not `ctx`;
 - do not use inner classes or records; prefer outer classes (e.g. `Message`, not `FakeMessageProducer.SentMessage`)
+- in a try-catch, leave one blank line between the `try` body and the first `catch` clause; no blank line between one `catch` clause and the next
 - only test domain classes; do not write tests for adapters (handlers, `Real*` implementations)
 - TDD means one test at a time: write a single failing test, then the implementation, then the next test; never write several tests in advance
 

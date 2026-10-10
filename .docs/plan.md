@@ -95,7 +95,7 @@ learn-aws/
   - fix 1: self-referencing 9098 ingress/egress rules on `msk-sg` (the mapping's ENI uses the cluster's security group, not the Lambda's)
   - fix 2: `slf4j-api` 2.0.7 pinned in `pom.xml` (`kafka-clients` brought 1.7.x, which silently dropped all logs)
 - the mapping may be created before the topic exists (the producer creates it on its first call): if it stays in `Creating`, find a way to create the topic first
-- orphan mapping `03126fa0-0762-40ab-835b-bf09f4a52acf` (eu-west-3) is stuck in `Creating` and can't be deleted (`ResourceInUseException`): retry `aws lambda delete-event-source-mapping`, else AWS Support; check Billing for stray costs
+- orphan mapping `03126fa0-0762-40ab-835b-bf09f4a52acf` (eu-west-3) was stuck in `Creating`; it moved to `Disabled` after a day and was deleted on 2026-10-10; check Billing for stray costs
 - lesson: a mapping in `Creating` can't be deleted, so a failed apply can block `terraform destroy`; recovery was `terraform state rm` on the mapping, then `destroy`
 
 ---
