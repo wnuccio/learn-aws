@@ -119,6 +119,9 @@
 - security group: 
   - a set of inbound/outbound rules (protocol + port + source/destination) attached to a resource's network interface; 
   - source/destination can be a CIDR range or another security group (by ID)
+  - members of the same security group can't talk to each other by default: 
+    - a self-referencing rule (the group itself as source/destination) is needed
+    - for both `egress` (on the sender) and `ingress` (on the receiver)
   - govern raw network traffic (e.g. a JDBC connection) through packet filtering
   - different from IAM, which is identity-based and governs calls to AWS APIs (`s3:PutObject`, `lambda:InvokeFunction`); 
 
@@ -230,6 +233,9 @@ Region eu-west-3
 - the mapping polls with the function's execution role, so no `aws_lambda_permission` is needed
   - IAM auth needs `kafka-cluster:Connect`, `DescribeTopic`, `ReadData`, `DescribeGroup`, `AlterGroup` on the role, plus `AWSLambdaMSKExecutionRole`
 - provisioned mode (`provisioned_poller_config`) needs no NAT or VPC endpoints; on-demand mode does (Lambda, STS)
+  - here provisioned mode stuck in `Creating` with no error; on-demand mode with interface endpoints for Lambda and STS worked
+  - the mapping calls the Lambda (invoke) and STS (role credentials) APIs over 443 from its ENI: endpoint security group allows 443 from the cluster's group
+- the consumer function itself can stay outside the VPC
 - `kafka-clients` brings `slf4j-api` 1.7.x: pin 2.x or `slf4j-simple` 2.x finds no binder and every log line is dropped
 - a mapping stuck in `Creating` can't be deleted: `terraform destroy` fails until it leaves that state
   - workaround: `terraform state rm` the mapping, then `destroy` the rest

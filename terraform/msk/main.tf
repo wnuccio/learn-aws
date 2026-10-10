@@ -50,6 +50,12 @@ resource "aws_security_group" "msk" {
   vpc_id = aws_vpc.main.id
 }
 
+# For the Lambda and STS interface endpoints, which the event source mapping calls over HTTPS (on-demand mode)
+resource "aws_security_group" "endpoints" {
+  name   = "${var.name}-endpoints-sg"
+  vpc_id = aws_vpc.main.id
+}
+
 # 9098 is the Kafka port for IAM authentication
 resource "aws_vpc_security_group_egress_rule" "lambda_to_msk" {
   security_group_id            = aws_security_group.lambda.id
@@ -83,6 +89,45 @@ resource "aws_vpc_security_group_egress_rule" "msk_to_msk" {
   ip_protocol                  = "tcp"
   from_port                    = 9098
   to_port                      = 9098
+}
+
+# In on-demand mode, the mapping's network interface (cluster security group) calls the Lambda and STS APIs
+# over HTTPS through the VPC endpoints
+resource "aws_vpc_security_group_egress_rule" "msk_to_endpoints" {
+  security_group_id            = aws_security_group.msk.id
+  referenced_security_group_id = aws_security_group.endpoints.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+}
+
+resource "aws_vpc_security_group_ingress_rule" "endpoints_from_msk" {
+  security_group_id            = aws_security_group.endpoints.id
+  referenced_security_group_id = aws_security_group.msk.id
+  ip_protocol                  = "tcp"
+  from_port                    = 443
+  to_port                      = 443
+}
+
+# Private door to the Lambda API: the mapping uses it to invoke the consumer.
+# With private DNS, lambda.<region>.amazonaws.com resolves to this endpoint inside the VPC.
+resource "aws_vpc_endpoint" "lambda" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.lambda"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.endpoints.id]
+  private_dns_enabled = true
+}
+
+# Private door to the STS API: the mapping uses it to get the consumer role's temporary credentials
+resource "aws_vpc_endpoint" "sts" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.sts"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.endpoints.id]
+  private_dns_enabled = true
 }
 
 # --- MSK -------------------------------------------------------------------
@@ -204,7 +249,7 @@ resource "aws_apigatewayv2_stage" "default" {
 }
 
 resource "aws_cloudwatch_log_group" "api_gateway" {
-  name              = "/aws/apigateway/${var.name}-producer"
+  name              = "/aws/apigateway/${var.name}-producer-gateway"
   retention_in_days = 7
 }
 
@@ -435,7 +480,8 @@ resource "aws_lambda_function" "consumer" {
 }
 
 # The mapping polls the topic with the consumer role and invokes the function with batches of records.
-# The provisioned_poller_config block switches it to provisioned mode: no NAT or VPC endpoints needed.
+# On-demand mode (no provisioned_poller_config): the mapping reaches Lambda and STS through the VPC endpoints.
+# Provisioned mode stalled in Creating twice, before creating its network interface, with no error.
 # The topic must exist before the mapping is created, hence the dependency on the invocation that creates it.
 # TRIM_HORIZON so that no record is missed if the producer writes before the poller starts.
 resource "aws_lambda_event_source_mapping" "consumer" {
@@ -444,14 +490,13 @@ resource "aws_lambda_event_source_mapping" "consumer" {
   topics            = [var.topic]
   starting_position = "TRIM_HORIZON"
 
-  provisioned_poller_config {
-    minimum_pollers = 1
-    maximum_pollers = 2
-  }
-
   depends_on = [
     aws_lambda_invocation.create_topic,
     aws_iam_role_policy_attachment.consumer_msk_execution,
-    aws_iam_role_policy.consumer_kafka
+    aws_iam_role_policy.consumer_kafka,
+    aws_vpc_endpoint.lambda,
+    aws_vpc_endpoint.sts,
+    aws_vpc_security_group_egress_rule.msk_to_endpoints,
+    aws_vpc_security_group_ingress_rule.endpoints_from_msk
   ]
 }
