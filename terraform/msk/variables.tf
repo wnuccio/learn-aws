@@ -1,7 +1,11 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "eu-west-3"
+}
+
+variable "jar_path" {
+  description = "Path of the Lambda jar"
+  type        = string
 }
 
 variable "topic" {

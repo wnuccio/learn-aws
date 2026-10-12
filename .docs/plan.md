@@ -107,12 +107,12 @@ learn-aws/
 ---
 
 ### 9. Terragrunt
-- [ ] Add a `terragrunt.hcl` per root module (`terraform/lambda/`, `terraform/lambda2/`, `terraform/msk/`)
-- [ ] Factor shared provider/backend config into a root `terragrunt.hcl`, inherited via `include`
-- [ ] Replace `terraform apply`/`destroy` with `terragrunt apply`/`destroy` (and `run-all` across modules)
-- [ ] Compare: what Terragrunt buys over plain Terraform once there are 3 root modules (DRY config, remote state, orchestration)
+- [x] Add a `terragrunt.hcl` per root module (`terraform/lambda/`, `terraform/lambda2/`, `terraform/msk/`)
+- [x] Factor shared provider config into `terraform/root.hcl`, inherited via `include`
+- [x] Replace `terraform apply`/`destroy` with `terragrunt apply`/`destroy` (and `run --all` across modules)
+- [x] Compare: what Terragrunt buys over plain Terraform once there are 3 root modules (DRY config, remote state, orchestration)
 
-**Status:** 🔮 Future work
+**Status:** ✅ Complete — `run --all plan` across the three modules; apply/destroy via Terragrunt in `lambda/`
 
 ---
 

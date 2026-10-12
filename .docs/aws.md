@@ -279,3 +279,16 @@ IMPORTANT: any resource created manually before 'apply' will not be managed by T
 
 
 
+
+# Terragrunt
+
+## Overview
+- a thin wrapper around Terraform: it helps removing duplications between Terraform modules
+- it defines common blocks in in a `root.hcl` in a parent folder 
+- each module contains a `terragrunt.hcl` with an `include` block to inherit the `root.hcl`
+- commands: `terragrunt plan`/`apply`/`destroy` in a module; `terragrunt run --all <cmd>` across all modules
+- IMPORTANT: the Terraform command runs in a copy of the module under `.terragrunt-cache/`
+
+## Sharing a value between modules
+- declare the same `variable` in each module, without a `default`
+- declare an input with the same name in `root.hcl` (`inputs` block): Terragrunt injects it into every module

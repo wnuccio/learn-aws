@@ -1,16 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
 data "aws_caller_identity" "current" {}
 
 resource "aws_iam_role" "lambda_role" {
@@ -70,7 +57,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb_policy" {
 }
 
 resource "aws_lambda_function" "helloworld" {
-  filename      = "../../target/learn-aws.jar"
+  filename      = var.jar_path
   function_name = var.function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "org.example.lambda.HelloWorldHandler"
@@ -78,7 +65,7 @@ resource "aws_lambda_function" "helloworld" {
   timeout       = 30
   memory_size   = 1024
 
-  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+  source_code_hash = filebase64sha256(var.jar_path)
 
   environment {
     variables = {

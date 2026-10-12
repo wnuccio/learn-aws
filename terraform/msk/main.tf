@@ -1,16 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -262,7 +249,7 @@ resource "aws_cloudwatch_log_group" "lambda" {
 
 # The first call on a cold container opens the Kafka connection, hence the generous timeout
 resource "aws_lambda_function" "producer" {
-  filename      = "../../target/learn-aws.jar"
+  filename      = var.jar_path
   function_name = "${var.name}-producer"
   role          = aws_iam_role.producer_role.arn
   handler       = "org.example.msk.ProducerHandler"
@@ -270,7 +257,7 @@ resource "aws_lambda_function" "producer" {
   timeout       = 60
   memory_size   = 1024
 
-  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+  source_code_hash = filebase64sha256(var.jar_path)
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id
@@ -348,7 +335,7 @@ resource "aws_iam_role_policy" "topic_creator_kafka" {
 
 # Needs the VPC: the topic is created over the Kafka protocol, which is only reachable from inside it
 resource "aws_lambda_function" "topic_creator" {
-  filename      = "../../target/learn-aws.jar"
+  filename      = var.jar_path
   function_name = "${var.name}-topic-creator"
   role          = aws_iam_role.topic_creator_role.arn
   handler       = "org.example.msk.CreateTopicHandler"
@@ -356,7 +343,7 @@ resource "aws_lambda_function" "topic_creator" {
   timeout       = 60
   memory_size   = 1024
 
-  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+  source_code_hash = filebase64sha256(var.jar_path)
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id
@@ -457,7 +444,7 @@ resource "aws_iam_role_policy" "consumer_kafka" {
 # Not VPC-attached: the event source mapping polls Kafka and invokes the function through the Lambda service,
 # and the function only logs what it receives
 resource "aws_lambda_function" "consumer" {
-  filename      = "../../target/learn-aws.jar"
+  filename      = var.jar_path
   function_name = "${var.name}-consumer"
   role          = aws_iam_role.consumer_role.arn
   handler       = "org.example.msk.ConsumerHandler"
@@ -465,7 +452,7 @@ resource "aws_lambda_function" "consumer" {
   timeout       = 30
   memory_size   = 1024
 
-  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+  source_code_hash = filebase64sha256(var.jar_path)
 
   logging_config {
     log_format = "Text"

@@ -1,20 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -125,7 +108,7 @@ resource "aws_iam_role_policy_attachment" "lambda_vpc_execution" {
 }
 
 resource "aws_lambda_function" "helloworld2" {
-  filename      = "../../target/learn-aws.jar"
+  filename      = var.jar_path
   function_name = var.function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "org.example.lambda2.HelloWorld2Handler"
@@ -133,7 +116,7 @@ resource "aws_lambda_function" "helloworld2" {
   timeout       = 30
   memory_size   = 1024
 
-  source_code_hash = filebase64sha256("../../target/learn-aws.jar")
+  source_code_hash = filebase64sha256(var.jar_path)
 
   vpc_config {
     subnet_ids         = aws_subnet.private[*].id

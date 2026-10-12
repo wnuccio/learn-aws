@@ -43,3 +43,7 @@ build/
 ### Terraform ###
 terraform/**/.terraform/
 terraform/**/terraform.tfstate*
+
+### Terragrunt ###
+terraform/**/.terragrunt-cache/
+terraform/**/provider.tf
