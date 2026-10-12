@@ -98,17 +98,16 @@ learn-aws/
 - run 3: on-demand mode plus VPC endpoints for Lambda and STS (`endpoints-sg`, 443 from `msk-sg`) worked at the first try
 - the consumer Lambda works outside the VPC
 
-**Pending / open points:**
-- orphan mapping `e51ced8b-1376-4962-b5dd-d064fe7862de` (eu-west-3) reached `Disabled` within about an hour and was deleted on 2026-10-10
-- check Billing for stray costs
+**Notes (closed, no further verification planned):**
+- both orphan mappings were deleted; none left in eu-west-3 (checked 2026-10-12)
 - gateway log group renamed to `/aws/apigateway/msk-demo-producer-gateway`: takes effect at the next apply
-- unconfirmed: whether a function error in the topic creator fails the apply; the default `lifecycle_scope` of the invocation (believed `CREATE_ONLY`)
+- not verified: whether a function error in the topic creator fails the apply; the default `lifecycle_scope` of the invocation (believed `CREATE_ONLY`)
 - lesson: a mapping in `Creating` can't be deleted, so a failed apply can block `terraform destroy`; recovery was `terraform state rm` on the mapping, then `destroy`
 
 ---
 
 ### 9. Terragrunt
-- [ ] Add a `terragrunt.hcl` per root module (`terraform/`, `terraform/rds/`, `terraform/msk/`)
+- [ ] Add a `terragrunt.hcl` per root module (`terraform/lambda/`, `terraform/lambda2/`, `terraform/msk/`)
 - [ ] Factor shared provider/backend config into a root `terragrunt.hcl`, inherited via `include`
 - [ ] Replace `terraform apply`/`destroy` with `terragrunt apply`/`destroy` (and `run-all` across modules)
 - [ ] Compare: what Terragrunt buys over plain Terraform once there are 3 root modules (DRY config, remote state, orchestration)
