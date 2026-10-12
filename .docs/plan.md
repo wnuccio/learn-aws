@@ -116,6 +116,46 @@ learn-aws/
 
 ---
 
+### 10. Bastion Host with EC2
+- [ ] New Terraform root module (`terraform/bastion/`), included in Terragrunt like the others
+  - [ ] VPC with a public subnet (internet gateway, route table) and a private subnet
+  - [ ] bastion EC2 in the public subnet, with a public IP; SSH allowed only from my IP
+  - [ ] small private EC2 in the private subnet, SSH allowed only from the bastion's security group
+  - [ ] `aws_key_pair` from a local public key (private key never committed)
+- [ ] `apply`, then SSH to the private instance through the bastion (`ssh -J`)
+- [ ] Optional: reach the RDS of `lambda2/` through the bastion (SSH tunnel)
+- [ ] Compare: SSM Session Manager as an alternative (no open port, no keys)
+- [ ] **`destroy` immediately after** (EC2 and public IPv4 billed hourly)
+
+**Status:** 🔜 Next
+
+---
+
+### 11. Terragrunt Environments
+- [ ] `dev/` and `prod/` configurations of one module (e.g. `lambda/`), differing only in their inputs
+- [ ] Resource names come from inputs, so the environments wouldn't collide
+- [ ] `plan` both; apply at most one (no parallel deployments)
+
+**Status:** 🔮 Future work
+
+---
+
+### 12. Terragrunt Remote State
+- [ ] A single `remote_state` block in `root.hcl`: S3 bucket for the state, with locking
+- [ ] Understand the bootstrap (the bucket must exist before the state) and that it outlives `destroy`
+
+**Status:** 🔮 Future work
+
+---
+
+### 13. Terragrunt Dependency Blocks
+- [ ] Split a module (e.g. network vs Lambda) and pass outputs with a `dependency` block
+- [ ] See how `run --all` orders the modules
+
+**Status:** 🔮 Future work
+
+---
+
 ## Key Concepts to Understand
 
 - **Terraform** = Infrastructure as Code (IaC) — defines *where and how* your Lambda runs

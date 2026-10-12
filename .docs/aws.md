@@ -240,6 +240,27 @@ Region eu-west-3
 - a mapping stuck in `Creating` can't be deleted: `terraform destroy` fails until it leaves that state
   - workaround: `terraform state rm` the mapping, then `destroy` the rest
 
+## SSH
+- SSH (Secure Shell): a protocol to open a terminal on a remote machine over an encrypted connection
+- server: the remote machine runs `sshd`, listening on port 22; 
+- client: the `ssh` command
+- analogy: the public key is a lock; the private key is the only key that opens it
+- setup: 
+  - the client's public key (the lock) is put on the server, in `~/.ssh/authorized_keys`; 
+  - the private key (the key) stays on the client
+- communication:
+  - 1: the server proves its identity with its host key; the client saves it in `~/.ssh/known_hosts` at the first connection
+  - 2: the client sends its public key (the lock) to log-in
+  - 3: the server checks that the lock is in `authorized_keys`, otherwise refuses
+  - 4: the server sends a challenge; the client signs it with its private key
+  - 5: the server verifies the signature with the public key: **the private key never travels over the network**
+  - 6: the encrypted connection is open
+- Example:
+  - `ssh-keygen -t ed25519`: creates the key pair (`~/.ssh/id_ed25519` private, `~/.ssh/id_ed25519.pub` public)
+  - `ssh -i <private_key> <user>@<host>`: opens a shell on the remote machine
+  - in a bastion host there are two machines: the bastion (public) and the target machine (private)
+  - `ssh -J <user>@<bastion> <user>@<target_host>`: jumps through the bastion to the target machine
+
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
 - **Add logs at boundaries**: log before and after each major operation (S3 write, response building, etc.)
