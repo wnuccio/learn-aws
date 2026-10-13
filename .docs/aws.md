@@ -140,6 +140,29 @@ Region eu-west-3
 - subnets of the same VPC can't overlap in address range
 - MSK and RDS need subnets in at least two AZs; subnets cost nothing
 
+### Public subnet with a web server
+- 1: an `Internet Gateway` (IGW) attached to the VPC
+- 2: a `subnet`: an IP range within the VPC block
+- 3: a `route table` associated with the subnet, with `0.0.0.0/0` → IGW
+  - it directs traffic **leaving** the subnet, by destination: allows the replies to the clients
+- 4: an `EC2 instance` in the subnet: AWS creates its primary ENI, with a private IP from the subnet range
+- 5: a `public IP` on the instance (on its ENI): the IGW maps it 1:1 to the private IP
+- 6: an `ingress rule` on the instance's `security group`: TCP 80 from `0.0.0.0/0`
+  - security groups are stateful: replies to allowed requests go out with no egress rule
+- and a web server listening on port 80
+
+sequence of events:
+- request:
+  - 1: a client on the internet sends a request to the instance's `public IP`
+  - 2: the `IGW` receives it and translates the destination: public IP → `private IP` of the instance's ENI
+  - 3: `the security group` (firewall) checks its ingress rules: TCP 80 is allowed, so the request reaches the instance
+    - the route table has no role here
+- reply:
+  - 4: the instance sends the reply from its `private IP` to the client's address
+  - 5: the `security group` (it's stateful firewall) lets the reply out
+  - 6: the subnet's `route table` sends it to the IGW (`0.0.0.0/0`)
+  - 7: the `IGW` translates the source: private IP → `public IP`, then forwards it to the client
+
 ### Architecture
 ```
          (public internet)
