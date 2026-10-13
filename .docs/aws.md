@@ -261,6 +261,21 @@ Region eu-west-3
   - in a bastion host there are two machines: the bastion (public) and the target machine (private)
   - `ssh -J <user>@<bastion> <user>@<target_host>`: jumps through the bastion to the target machine
 
+## Bastion host
+- bastion host: a machine in a public subnet from which you jump to the machines in the private subnets of the same VPC
+- why: private machines have no public IP and no internet route; the bastion is a single, controlled entry point
+- bastion: EC2 in a public subnet (public IP, internet gateway route); its security group allows 22 only from my IP
+- target: EC2 in a private subnet; its security group allows 22 only from the bastion's security group
+
+```
+internet ──22──> [bastion EC2]  public subnet (public IP, internet gateway route)
+                      │ 22
+                      ▼
+                 [private EC2]  private subnet (no public IP, no internet route)
+```
+
+- alternative: SSM Session Manager gives a shell through the AWS API, with IAM access control
+
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
 - **Add logs at boundaries**: log before and after each major operation (S3 write, response building, etc.)
