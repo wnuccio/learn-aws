@@ -136,8 +136,10 @@ learn-aws/
 ### 11. Containers with ECS on Fargate
 - [x] Install Docker on the Mac: Colima (`brew install colima docker`, then `colima start`)
   - Apple Silicon builds ARM images: the task definition must use `ARM64` (or build with `--platform linux/amd64`)
-- [ ] Code in `org.example.fargate`, same pom and same jar: a small domain class (TDD) and a `main` class with the JDK's HTTP server
-- [ ] `Dockerfile` at the repo root: Java 17 base image + `target/learn-aws.jar`; built with a separate `docker build`, no Maven plugin
+- [x] Code in `org.example.fargate`, same pom and same jar: `Greeter` (TDD) and `GreeterServer` with the JDK's HTTP server
+- [x] `Dockerfile` at the repo root: Java 17 base image + `target/learn-aws.jar`; built with a separate `docker build`, no Maven plugin
+  - `.dockerignore` lets only the jar into the build context
+  - verified locally: plain `java`, `docker run -p 8080:8080`, and IntelliJ (needs "Bind ports" in the Docker run configuration)
 - [ ] New Terraform root module (`terraform/fargate/`), included in Terragrunt like the others
   - [ ] ECR repository
   - [ ] VPC with a public subnet (no NAT gateway, no load balancer); security group allowing the app port only from my IP
@@ -147,7 +149,7 @@ learn-aws/
 - [ ] Find the task's public IP (CLI or console), `curl` it; check the logs in CloudWatch
 - [ ] **`destroy` immediately after** (billed per second while running)
 
-**Status:** 🔮 Future work — may hit the same account block as step 10, to be seen at the first apply
+**Status:** 🚧 In progress — code and image work locally; next: `terraform/fargate/`, starting with the ECR repository (may hit the same account block as step 10, to be seen at the first apply)
 
 ---
 
