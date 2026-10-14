@@ -117,17 +117,19 @@ learn-aws/
 ---
 
 ### 10. Bastion Host with EC2
-- [ ] New Terraform root module (`terraform/bastion/`), included in Terragrunt like the others
-  - [ ] VPC with a public subnet (internet gateway, route table) and a private subnet
-  - [ ] bastion EC2 in the public subnet, with a public IP; SSH allowed only from my IP
-  - [ ] small private EC2 in the private subnet, SSH allowed only from the bastion's security group
-  - [ ] `aws_key_pair` from a local public key (private key never committed)
+- [x] New Terraform root module (`terraform/bastion/`), included in Terragrunt like the others
+  - [x] VPC with a public subnet (internet gateway, route table) and a private subnet
+  - [x] bastion EC2 in the public subnet, with a public IP; SSH allowed only from my IP
+  - [x] small private EC2 in the private subnet, SSH allowed only from the bastion's security group
+  - [x] `aws_key_pair` from a local public key (private key never committed)
 - [ ] `apply`, then SSH to the private instance through the bastion (`ssh -J`)
+  - apply blocked on 2026-10-13: the network parts are created, `RunInstances` fails with `Blocked: This account is currently blocked and not recognized as a valid account` (twice); dry runs succeed, billing is fine
+  - waiting on an AWS Support case (Account and billing)
 - [ ] Optional: reach the RDS of `lambda2/` through the bastion (SSH tunnel)
 - [ ] Compare: SSM Session Manager as an alternative (no open port, no keys)
 - [ ] **`destroy` immediately after** (EC2 and public IPv4 billed hourly)
 
-**Status:** 🔜 Next
+**Status:** ⏸️ On hold — module written; EC2 launches blocked at account level, waiting for AWS Support
 
 ---
 

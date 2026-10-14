@@ -28,6 +28,16 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - `curl -X POST -H "Content-Type: text/plain" -d "hi" "$(terraform output -raw api_invoke_url)/messages?key=mary"`
 - `curl -X POST -H "Content-Type: text/plain" -d "hey" "$(terraform output -raw api_invoke_url)/messages?key=anna"`
 
+## Test Bastion
+- `ssh-keygen -t ed25519 -f ~/.ssh/bastion-demo -C bastion-demo`: creates the key pair (just once)
+  - `~/.ssh/bastion-demo`:  private key
+  - `~/.ssh/bastion-demo.pub` public key, uploaded by Terraform
+- `export TF_VAR_my_ip_cidr="$(curl -s https://checkip.amazonaws.com)/32"`: sets my public IP
+- `terragrunt apply`: deploys the bastion and target instances, and outputs the `ssh_command`
+- `ssh-add ~/.ssh/bastion-demo`: loads the private key into the SSH agent, so the jump process of `-J` can use it
+- `ssh -J ec2-user@<bastion_public_ip> ec2-user@<target_private_ip>`: connects to target  (copy from the output)
+- `terragrunt destroy`: cleans up
+
 ## Documentation
 - [Learning Plan](.docs/plan.md)
 - [AWS Notes](.docs/aws.md)

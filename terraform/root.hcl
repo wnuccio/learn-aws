@@ -1,7 +1,3 @@
-locals {
-  aws_region = "eu-west-3"
-}
-
 generate "provider" {
   path      = "provider.tf"
   if_exists = "overwrite_terragrunt"
@@ -26,6 +22,6 @@ EOF
 }
 
 inputs = {
-  aws_region = local.aws_region
+  aws_region = "eu-west-3"
   jar_path   = "${get_parent_terragrunt_dir()}/../target/learn-aws.jar"
 }
