@@ -133,7 +133,25 @@ learn-aws/
 
 ---
 
-### 11. Terragrunt Environments
+### 11. Containers with ECS on Fargate
+- [ ] Install Docker on the Mac (Docker Desktop, or Colima as an open-source alternative)
+  - Apple Silicon builds ARM images: the task definition must use `ARM64` (or build with `--platform linux/amd64`)
+- [ ] Code in `org.example.fargate`, same pom and same jar: a small domain class (TDD) and a `main` class with the JDK's HTTP server
+- [ ] `Dockerfile` at the repo root: Java 17 base image + `target/learn-aws.jar`; built with a separate `docker build`, no Maven plugin
+- [ ] New Terraform root module (`terraform/fargate/`), included in Terragrunt like the others
+  - [ ] ECR repository
+  - [ ] VPC with a public subnet (no NAT gateway, no load balancer); security group allowing the app port only from my IP
+  - [ ] ECS cluster, task definition (smallest size: 0.25 vCPU, 0.5 GB), service with one task and a public IP
+  - [ ] task execution role only (ECR pull, logs): the code calls no AWS service, so no task role
+- [ ] `apply`, then `docker build` and `docker push` to ECR: the service retries until the image exists
+- [ ] Find the task's public IP (CLI or console), `curl` it; check the logs in CloudWatch
+- [ ] **`destroy` immediately after** (billed per second while running)
+
+**Status:** 🔮 Future work — may hit the same account block as step 10, to be seen at the first apply
+
+---
+
+### 12. Terragrunt Environments
 - [ ] `dev/` and `prod/` configurations of one module (e.g. `lambda/`), differing only in their inputs
 - [ ] Resource names come from inputs, so the environments wouldn't collide
 - [ ] `plan` both; apply at most one (no parallel deployments)
@@ -142,7 +160,7 @@ learn-aws/
 
 ---
 
-### 12. Terragrunt Remote State
+### 13. Terragrunt Remote State
 - [ ] A single `remote_state` block in `root.hcl`: S3 bucket for the state, with locking
 - [ ] Understand the bootstrap (the bucket must exist before the state) and that it outlives `destroy`
 
@@ -150,7 +168,7 @@ learn-aws/
 
 ---
 
-### 13. Terragrunt Dependency Blocks
+### 14. Terragrunt Dependency Blocks
 - [ ] Split a module (e.g. network vs Lambda) and pass outputs with a `dependency` block
 - [ ] See how `run --all` orders the modules
 

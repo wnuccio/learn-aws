@@ -106,8 +106,13 @@
   - the prefix fixes the left bits (network part), the rest vary (host addresses); 
   - e.g.: `10.0.0.0/24` → from `10.0.0.0` to `10.0.0.255`
 - VPC networking applies to resources with a network interface in a subnet (EC2, RDS, Lambda only if explicitly VPC-attached)
-- an ENI (network interface) is the address assigned to a resource within a subnet, plus the firewall (security groups) applied to traffic to and from that address
-  - a resource can have more than one ENI (e.g. one per subnet)
+- `ENI` (Elastic Network Interface): a virtual network card, attached to a host (EC2, Lambda, Fargate task)
+  - `subnet`: exactly one (so one AZ)
+  - `private IP`: from the subnet range
+  - `public IP`: optional, mapped to the private one by the IGW
+  - `security groups`: the firewall sits on the card
+  - `MAC address`: like any network card
+  - `host`: a resource can have more than one ENI (e.g. one per subnet)
 - many AWS services (S3, Lambda by default, DynamoDB) have their own public API endpoint and live outside any VPC
 - a `subnet` lives inside a VPC
   - a public subnet
@@ -298,6 +303,38 @@ internet ──22──> [bastion EC2]  public subnet (public IP, internet gatew
 ```
 
 - alternative: SSM Session Manager gives a shell through the AWS API, with IAM access control
+
+## ECS (Elastic Container Service) and Fargate
+- `image`: a frozen file system (OS files - kernel excluded, JDK, the jar) plus a start command
+- `container`: a running instance of an image
+- `mvn package` builds the jar, 
+- `docker build` creates the image from the jar
+- entry point: a class with `main` that starts an HTTP server
+- `ECR`: AWS's image registry; one `repository` per image; 
+- `docker push` uploads the image to the registry
+- `ECS`: the orchestrator that pulls the image from ECR and runs the containers (task definition, task, service, cluster)
+  - the `launch type` says where the containers physically run:
+  - `EC2 launch type`: on your own EC2 instances, which you manage, patch and scale
+  - `Fargate launch type`: on AWS-managed machines
+- `task definition`: a template with a list of container definitions (image, port, env vars), plus CPU, memory, IAM roles, logging
+- `task`: a running instance of a task definition: one or more containers sharing one IP and one lifecycle
+  - analogy: task definition = docker compose file, task = `docker compose up`
+- `service`: a supervisor that keeps N tasks running, replaces crashed ones, rolls out the new `task definition`
+- `cluster`: on Fargate, just a name grouping services and tasks
+- chain in Terraform: cluster → service → task definition → container definition → ECR image
+- a task has its own IP, so no API Gateway is needed; the IP changes at every restart
+- two IAM roles, both trusting `ecs-tasks.amazonaws.com`:
+  - `task execution role`: used by ECS to pull the image from ECR and write logs (`AmazonECSTaskExecutionRolePolicy`)
+  - `task role`: used by the code at runtime for SDK calls (e.g. S3); the equivalent of the Lambda role
+  - missing execution role → the task never starts; missing task role → `AccessDenied` from the code
+- each task gets its own ENI in a subnet
+- starting a task, step by step:
+  - 1: the `ECS` (control plane) - outside the VPC - decides to start the task and picks a Fargate host
+  - 2: the `ECS agent` on that host - inside the VPC - assumes the execution role: the permission to pull
+  - 3: the agent calls `ECR` - outside the VPC - through the task's ENI → route table → IGW
+    - so the task needs outbound access: public subnet + public IP
+  - 4: the image is downloaded and the container starts
+  - the code in the container never sees the execution role's credentials, only the task role's
 
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
