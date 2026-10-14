@@ -9,6 +9,8 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - AWS CLI installed (use aws script)
 - Terraform installed (use Homebrew)
 - Terraform plugin for IntelliJ
+- Terragrunt installed (use Homebrew)
+- Docker via Colima (use Homebrew: `brew install colima docker`); run `colima start` after each reboot
 - Set the PATH in: source ~/.zprofile
 
 ## First test (lambda function)
@@ -37,6 +39,18 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - `ssh-add ~/.ssh/bastion-demo`: loads the private key into the SSH agent, so the jump process of `-J` can use it
 - `ssh -J ec2-user@<bastion_public_ip> ec2-user@<target_private_ip>`: connects to target  (copy from the output)
 - `terragrunt destroy`: cleans up
+
+## Test Fargate
+- `mvn package`: creates the fat jar
+- run the server locally, without Docker:
+  - `java -cp target/learn-aws.jar org.example.fargate.GreeterServer`: starts the server on port 8080
+  - `curl "http://localhost:8080/hello?name=World"`: in another terminal; the response should be `Hello, World!`
+  - `Ctrl+C`: stops the server
+- run the server locally, in Docker (`colima start` first):
+  - `docker build -t fargate-demo .`: builds the image from the `Dockerfile`, tagged `fargate-demo`
+  - `docker run --rm -p 8080:8080 fargate-demo`: starts a container, mapping the Mac's port 8080 to the container's
+  - `curl "http://localhost:8080/hello?name=World"`: in another terminal; the response should be `Hello, World!`
+  - `Ctrl+C`: stops the container (`--rm` removes it)
 
 ## Documentation
 - [Learning Plan](.docs/plan.md)

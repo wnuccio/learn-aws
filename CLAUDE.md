@@ -109,6 +109,7 @@ This project uses JUnit for testing. When dependencies are added:
   - read-only commands (e.g. `grep`, `ls`, `git status`) don't need confirmation
   - "can I do X" / "how would I undo Y" questions are requests for information: explain, don't execute
   - run it only after an explicit go-ahead, unless I clearly asked you to just do it
+- **Unit tests:** never run them yourself; tell me the exact command to run instead
 - **File edits:** apply code/doc changes directly with Edit/Write; the manual-mode approve/reject prompt is the review step
   - build incrementally, one piece at a time (one Terraform resource, one class), and pause for my go-ahead before the next
   - if edits ever apply without a prompt, tell me to check the permission mode (`Shift+Tab`)

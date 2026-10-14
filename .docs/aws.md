@@ -124,9 +124,9 @@
 - security group: 
   - a set of inbound/outbound rules (protocol + port + source/destination) attached to a resource's network interface; 
   - source/destination can be a CIDR range or another security group (by ID)
-  - members of the same security group can't talk to each other by default: 
-    - a self-referencing rule (the group itself as source/destination) is needed
-    - for both `egress` (on the sender) and `ingress` (on the receiver)
+    - members of the same security group can't talk to each other by default: 
+      - a self-referencing rule (the group itself as source/destination) is needed
+      - for both `egress` (on the sender) and `ingress` (on the receiver)
   - govern raw network traffic (e.g. a JDBC connection) through packet filtering
   - different from IAM, which is identity-based and governs calls to AWS APIs (`s3:PutObject`, `lambda:InvokeFunction`); 
 

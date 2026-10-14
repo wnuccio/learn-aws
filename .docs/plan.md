@@ -134,7 +134,7 @@ learn-aws/
 ---
 
 ### 11. Containers with ECS on Fargate
-- [ ] Install Docker on the Mac (Docker Desktop, or Colima as an open-source alternative)
+- [x] Install Docker on the Mac: Colima (`brew install colima docker`, then `colima start`)
   - Apple Silicon builds ARM images: the task definition must use `ARM64` (or build with `--platform linux/amd64`)
 - [ ] Code in `org.example.fargate`, same pom and same jar: a small domain class (TDD) and a `main` class with the JDK's HTTP server
 - [ ] `Dockerfile` at the repo root: Java 17 base image + `target/learn-aws.jar`; built with a separate `docker build`, no Maven plugin
