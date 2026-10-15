@@ -140,16 +140,17 @@ learn-aws/
 - [x] `Dockerfile` at the repo root: Java 17 base image + `target/learn-aws.jar`; built with a separate `docker build`, no Maven plugin
   - `.dockerignore` lets only the jar into the build context
   - verified locally: plain `java`, `docker run -p 8080:8080`, and IntelliJ (needs "Bind ports" in the Docker run configuration)
-- [ ] New Terraform root module (`terraform/fargate/`), included in Terragrunt like the others
-  - [ ] ECR repository
-  - [ ] VPC with a public subnet (no NAT gateway, no load balancer); security group allowing the app port only from my IP
-  - [ ] ECS cluster, task definition (smallest size: 0.25 vCPU, 0.5 GB), service with one task and a public IP
-  - [ ] task execution role only (ECR pull, logs): the code calls no AWS service, so no task role
+- [x] New Terraform root module (`terraform/fargate/`), included in Terragrunt like the others
+  - [x] ECR repository
+  - [x] VPC with a public subnet (no NAT gateway, no load balancer); security group allowing the app port only from my IP
+  - [x] ECS cluster, task definition (smallest size: 0.25 vCPU, 0.5 GB), service with one task and a public IP
+  - [x] task execution role only (ECR pull, logs): the code calls no AWS service, so no task role
+  - [x] commands for push, task IP, curl and logs in the "Test Fargate" section of `README.md`
 - [ ] `apply`, then `docker build` and `docker push` to ECR: the service retries until the image exists
 - [ ] Find the task's public IP (CLI or console), `curl` it; check the logs in CloudWatch
 - [ ] **`destroy` immediately after** (billed per second while running)
 
-**Status:** 🚧 In progress — code and image work locally; next: `terraform/fargate/`, starting with the ECR repository (may hit the same account block as step 10, to be seen at the first apply)
+**Status:** 🚧 In progress — code and image work locally, `terraform/fargate/` written (not yet validated or applied); next: `validate`/`plan`, then `apply` and push (may hit the same account block as step 10)
 
 ---
 

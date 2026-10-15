@@ -51,6 +51,21 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
   - `docker run --rm -p 8080:8080 fargate-demo`: starts a container, mapping the Mac's port 8080 to the container's
   - `curl "http://localhost:8080/hello?name=World"`: in another terminal; the response should be `Hello, World!`
   - `Ctrl+C`: stops the container (`--rm` removes it)
+- run the server on Fargate (in `terraform/fargate/`, after `docker build` above):
+  - `export TF_VAR_my_ip_cidr="$(curl -s https://checkip.amazonaws.com)/32"`: sets my public IP
+  - `terragrunt apply`: deploys the repository, network, cluster and service; the task fails until the image is pushed
+  - `REPO=$(terragrunt output -raw repository_url)`: saves the ECR repository URL
+  - `aws ecr get-login-password | docker login --username AWS --password-stdin "${REPO%%/*}"`: logs Docker into the registry
+  - `docker tag fargate-demo "$REPO:latest"`: the name is where `docker push` sends it: not Docker Hub (the default) but the ECR repository
+  - `docker image inspect fargate-demo --format '{{.RepoTags}}'`: lists all the image's names, the local one and the ECR one
+  - `docker push "$REPO:latest"`: uploads the image; the service's next launch attempt picks it up
+  - `aws ecs update-service --cluster fargate-demo --service fargate-demo --force-new-deployment`: optional, launches a task now instead of waiting for the next attempt
+  - `TASK=$(aws ecs list-tasks --cluster fargate-demo --service-name fargate-demo --query 'taskArns[0]' --output text)`: finds the running task
+  - `ENI=$(aws ecs describe-tasks --cluster fargate-demo --tasks "$TASK" --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)`: finds its network interface
+  - `IP=$(aws ec2 describe-network-interfaces --network-interface-ids "$ENI" --query 'NetworkInterfaces[0].Association.PublicIp' --output text)`: finds its public IP
+  - `curl "http://$IP:8080/hello?name=World"`: the response should be `Hello, World!`
+  - `aws logs tail /ecs/fargate-demo --follow`: shows the container's logs
+  - `terragrunt destroy`: cleans up
 
 ## Documentation
 - [Learning Plan](.docs/plan.md)
