@@ -56,9 +56,9 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
   - `terragrunt apply`: deploys the repository, network, cluster and service; the task fails until the image is pushed
   - `REPO=$(terragrunt output -raw repository_url)`: saves the ECR repository URL
   - `aws ecr get-login-password | docker login --username AWS --password-stdin "${REPO%%/*}"`: logs Docker into the registry
-  - `docker tag fargate-demo "$REPO:latest"`: the name is where `docker push` sends it: not Docker Hub (the default) but the ECR repository
+  - `docker tag fargate-demo "${REPO}:latest"`: the name is where `docker push` sends it: not Docker Hub (the default) but the ECR repository
   - `docker image inspect fargate-demo --format '{{.RepoTags}}'`: lists all the image's names, the local one and the ECR one
-  - `docker push "$REPO:latest"`: uploads the image; the service's next launch attempt picks it up
+  - `docker push "${REPO}:latest"`: uploads the image; the service's next launch attempt picks it up
   - `aws ecs update-service --cluster fargate-demo --service fargate-demo --force-new-deployment`: optional, launches a task now instead of waiting for the next attempt
   - `TASK=$(aws ecs list-tasks --cluster fargate-demo --service-name fargate-demo --query 'taskArns[0]' --output text)`: finds the running task
   - `ENI=$(aws ecs describe-tasks --cluster fargate-demo --tasks "$TASK" --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)`: finds its network interface

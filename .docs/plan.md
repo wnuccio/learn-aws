@@ -147,10 +147,13 @@ learn-aws/
   - [x] task execution role only (ECR pull, logs): the code calls no AWS service, so no task role
   - [x] commands for push, task IP, curl and logs in the "Test Fargate" section of `README.md`
 - [ ] `apply`, then `docker build` and `docker push` to ECR: the service retries until the image exists
+  - 2026-10-15: `apply` and push worked; the service can't place the task: `your account is currently blocked` (same block as step 10); destroyed
+  - added to the AWS Support case
+  - in zsh, `"$REPO:latest"` is wrong (`:l` is a modifier): use `"${REPO}:latest"`
 - [ ] Find the task's public IP (CLI or console), `curl` it; check the logs in CloudWatch
 - [ ] **`destroy` immediately after** (billed per second while running)
 
-**Status:** 🚧 In progress — code and image work locally, `terraform/fargate/` written (not yet validated or applied); next: `validate`/`plan`, then `apply` and push (may hit the same account block as step 10)
+**Status:** ⏸️ On hold — module validated and applied; the task can't start because of the account block, waiting for AWS Support (as step 10)
 
 ---
 
