@@ -83,6 +83,32 @@
     - good when one resource is touched by many callers
 - AWS's own default/preference is identity-based policies for same-account access; resource-based is reserved for cases that need it (cross-account, callers without an identity)
 
+## Secrets Manager
+- `secret`: has a name (public) and a value (the private part)
+  - the secret is a container: name, description, KMS key (plus tags, resource policy, rotation)
+  - the value lives in a `version`: each `put-secret-value` adds a new one
+  - the latest version is labeled `AWSCURRENT`, the one returned by `GetSecretValue`
+  - a secret can have no version: `CreateSecret` without a value (API, CLI, Terraform) creates only the container
+  - a secret with no version: `GetSecretValue` fails with `ResourceNotFoundException`
+- `Secrets Manager`:
+  - `storing the secret`
+    - the value is encrypted at rest with KMS
+    - the default encryption key is `aws/secretsmanager`
+    - the value is decrypted on `GetSecretValue`
+  - `retrieving the secret`
+    - no owner concept: creating a secret grants no right to read it
+    - `secretsmanager:GetSecretValue`: a user or role with this policy can read the secret
+- `administrator`: the account admin has all the rights,
+  - he can grant the read permission to a user or role, via a specific IAM policy
+  - by default only identities of the same account can read it;
+  - cross-account needs a resource policy and a customer-managed key
+  - attaching a role to a Lambda requires `iam:PassRole` on that role
+- in Terraform: `aws_secretsmanager_secret` is the container; after `apply` the secret has no version;
+  - the value can be set by hand (console, CLI), to keep it out of the code and the state
+  - `aws_secretsmanager_secret_version` is a version: not declared when the value is set by hand
+  - `recovery_window_in_days = 0` deletes the secret at `destroy` (otherwise it's only scheduled for deletion in 7-30 days)
+
+
 ## S3
 - a `bucket` is a container that holds objects
 - a `key` is the path/name of the object within the bucket (e.g., `filename.txt` or `folder/filename.txt`)

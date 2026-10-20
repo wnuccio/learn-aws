@@ -13,7 +13,7 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - Docker via Colima (use Homebrew: `brew install colima docker`); run `colima start` after each reboot
 - Set the PATH in: source ~/.zprofile
 
-## First test (lambda function)
+## Test Lambda
 - Go on AWS console and verify nothing exists: lambda function, API gateway, S3 bucket, log groups
 - Run `mvn package` to create the fat jar in local
 - Run terraform `init`, `plan` and `apply` to deploy the configuration
@@ -23,6 +23,15 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
   - Alternative: `curl "$(terraform output -raw api_invoke_url)hello?name=Uno"` (to avoid updating url after destroy) 
 - Verify the object is added in the S3 bucket and the logs are created
 - Run terraform `destroy` to clean up the configuration
+
+## Test Secrets Manager
+- `mvn package`: creates the fat jar
+- `terragrunt init`, `plan`, `apply` (in `terraform/lambda/`): deploys the lambda, the API and the secret container
+- Verify in the console (Secrets Manager): the secret exists, with no value and no version
+- `curl "$(terragrunt output -raw api_invoke_url)secret"`: returns 404 "secret has no value" (`ResourceNotFoundException`: no `AWSCURRENT` version)
+- `aws secretsmanager put-secret-value --secret-id "$(terragrunt output -raw secret_name)" --secret-string "my-api-key-123"`: creates the first version
+- `curl "$(terragrunt output -raw api_invoke_url)secret"`: returns the masked value
+- `terragrunt destroy`: cleans up (the secret is deleted immediately, thanks to `recovery_window_in_days = 0`)
 
 ## Test MSK
 - `curl -X POST -H "Content-Type: text/plain" -d "hello" "$(terraform output -raw api_invoke_url)/messages?key=john"`
