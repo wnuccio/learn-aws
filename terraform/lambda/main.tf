@@ -56,6 +56,23 @@ resource "aws_iam_role_policy" "lambda_dynamodb_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "lambda_secret_policy" {
+  name   = "${var.function_name}-secret-policy"
+  role   = aws_iam_role.lambda_role.name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Effect   = "Allow"
+        Resource = aws_secretsmanager_secret.api_key.arn
+      }
+    ]
+  })
+}
+
 resource "aws_lambda_function" "helloworld" {
   filename      = var.jar_path
   function_name = var.function_name
@@ -72,6 +89,7 @@ resource "aws_lambda_function" "helloworld" {
       S3_BUCKET_NAME      = aws_s3_bucket.helloworld.id
       DYNAMODB_TABLE_NAME = aws_dynamodb_table.helloworld.name
       APP_REGION          = var.aws_region
+      SECRET_NAME         = aws_secretsmanager_secret.api_key.name
     }
   }
 }
@@ -92,6 +110,12 @@ resource "aws_apigatewayv2_route" "helloworld" {
   api_id    = aws_apigatewayv2_api.helloworld.id
   target    = "integrations/${aws_apigatewayv2_integration.helloworld.id}"
   route_key = "GET /hello"
+}
+
+resource "aws_apigatewayv2_route" "secret" {
+  api_id    = aws_apigatewayv2_api.helloworld.id
+  target    = "integrations/${aws_apigatewayv2_integration.helloworld.id}"
+  route_key = "GET /secret"
 }
 
 resource "aws_apigatewayv2_stage" "default" {
@@ -142,4 +166,10 @@ resource "aws_dynamodb_table" "helloworld" {
     name = "id"
     type = "S"
   }
+}
+
+resource "aws_secretsmanager_secret" "api_key" {
+  name                    = "${var.function_name}-api-key"
+  description             = "Third-party API key, set by hand with put-secret-value"
+  recovery_window_in_days = 0
 }
