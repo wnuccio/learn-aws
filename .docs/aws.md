@@ -88,6 +88,11 @@
   - the secret is a container: name, description, KMS key (plus tags, resource policy, rotation)
   - the value lives in a `version`: each `put-secret-value` adds a new one
   - the latest version is labeled `AWSCURRENT`, the one returned by `GetSecretValue`
+  - rotation: a new `put-secret-value` moves `AWSCURRENT` to the new version, the old one becomes `AWSPREVIOUS`
+    - clients asking for `AWSCURRENT` get the new value with no change, no deploy
+    - `get-secret-value --version-stage AWSPREVIOUS`: reads the old value (e.g. to roll back)
+    - `list-secret-version-ids --secret-id <name>`: lists the versions with their labels
+    - a value cached in a warm Lambda stays old until a cold start
   - a secret can have no version: `CreateSecret` without a value (API, CLI, Terraform) creates only the container
   - a secret with no version: `GetSecretValue` fails with `ResourceNotFoundException`
 - `Secrets Manager`:
