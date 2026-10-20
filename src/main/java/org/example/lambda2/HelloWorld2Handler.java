@@ -20,60 +20,46 @@ public class HelloWorld2Handler implements RequestHandler<APIGatewayV2HTTPEvent,
     @Override
     public APIGatewayV2HTTPResponse handleRequest(APIGatewayV2HTTPEvent event, Context context) {
         String method = event.getRequestContext().getHttp().getMethod();
-        if (method.equals("GET")) {
-            return handleGet();
-        } else if (method.equals("POST")) {
-            return handlePost(event);
-        } else {
-            log.warn("unsupported method: {}", method);
-            return APIGatewayV2HTTPResponse.builder()
-                    .withStatusCode(405)
-                    .withBody("Method Not Allowed")
-                    .build();
+        try {
+            return switch (method) {
+                case "GET" -> handleGet();
+                case "POST" -> handlePost(event);
+                default -> handleUnsupported(method);
+            };
+
+        } catch (Exception e) {
+            log.error("failed to handle method={}", method, e);
+            return response(500, "Error: " + e.getMessage());
         }
     }
 
     private APIGatewayV2HTTPResponse handleGet() {
-        try {
-            List<String> messages = helloWorld2.getAllMessagesOrdered();
-            log.info("retrieved {} messages", messages.size());
+        List<String> messages = helloWorld2.getAllMessagesOrdered();
+        log.info("retrieved {} messages", messages.size());
 
-            String body = "Stored messages: \n" + String.join("\n", messages);
-
-            return APIGatewayV2HTTPResponse.builder()
-                    .withStatusCode(200)
-                    .withBody(body)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("failed to retrieve messages", e);
-            return APIGatewayV2HTTPResponse.builder()
-                    .withStatusCode(500)
-                    .withBody("Error: " + e.getMessage())
-                    .build();
-        }
+        return response(200, "Stored messages: \n" + String.join("\n", messages));
     }
 
     private APIGatewayV2HTTPResponse handlePost(APIGatewayV2HTTPEvent event) {
-        try {
-            String name = event.getQueryStringParameters() != null
-                    ? event.getQueryStringParameters().get("name")
-                    : null;
+        String name = event.getQueryStringParameters() != null
+                ? event.getQueryStringParameters().get("name")
+                : null;
 
-            String id = helloWorld2.handleRequest(name);
-            log.info("stored name={} id={}", name, id);
+        String id = helloWorld2.handleRequest(name);
+        log.info("stored name={} id={}", name, id);
 
-            return APIGatewayV2HTTPResponse.builder()
-                    .withStatusCode(200)
-                    .withBody("Stored: " + id)
-                    .build();
+        return response(200, "Stored: " + id);
+    }
 
-        } catch (Exception e) {
-            log.error("failed to store name", e);
-            return APIGatewayV2HTTPResponse.builder()
-                    .withStatusCode(500)
-                    .withBody("Error: " + e.getMessage())
-                    .build();
-        }
+    private APIGatewayV2HTTPResponse handleUnsupported(String method) {
+        log.warn("unsupported method: {}", method);
+        return response(405, "Method Not Allowed");
+    }
+
+    private APIGatewayV2HTTPResponse response(int statusCode, String body) {
+        return APIGatewayV2HTTPResponse.builder()
+                .withStatusCode(statusCode)
+                .withBody(body)
+                .build();
     }
 }
