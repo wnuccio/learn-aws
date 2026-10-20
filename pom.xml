@@ -43,6 +43,13 @@
             <version>${aws-java-sdk.version}</version>
         </dependency>
 
+        <!-- AWS SDK v2 for Secrets Manager -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>secretsmanager</artifactId>
+            <version>${aws-java-sdk.version}</version>
+        </dependency>
+
         <!-- PostgreSQL JDBC driver for RDS -->
         <dependency>
             <groupId>org.postgresql</groupId>
