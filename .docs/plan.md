@@ -178,20 +178,23 @@ learn-aws/
 ### 13. Terragrunt Remote State
 - Done in an isolated experiment module, so the existing modules and their workflow stay untouched
 - Versions: Terragrunt 1.1.6, Terraform 1.16.4 (native S3 locking available)
-- [ ] New module `terraform/remote-state/`, included in Terragrunt like the others; the existing modules keep their local state
-  - [ ] a single `aws_ssm_parameter` (String, standard tier: free, created instantly, easy to change by hand)
-  - [ ] a `remote_state` block in the module's own `terragrunt.hcl` (not in `root.hcl`)
+- [x] New module `terraform/remote-state/`, included in Terragrunt like the others; the existing modules keep their local state
+  - [x] a single `aws_ssm_parameter` (String, standard tier: free, created instantly, easy to change by hand)
+    - `insecure_value` instead of `value`, which is always `sensitive` and hidden in plans
+    - switching an existing parameter from `value` to `insecure_value` gave a perpetual diff (provider 5.100.0): fixed by recreating it
+  - [x] a `remote_state` block in the module's own `terragrunt.hcl` (not in `root.hcl`)
     - backend `s3`, bucket named with the account ID (`get_aws_account_id()`), `encrypt = true`, `use_lockfile = true`
     - `key = "${path_relative_to_include()}/terraform.tfstate"`
     - `generate`: Terragrunt writes `backend.tf` in the module, like `provider.tf`
-- [ ] Bootstrap: the first `init` with `--backend-bootstrap` creates the bucket (versioning, encryption, public access blocked)
-- [ ] `apply`, then check the state at `remote-state/terraform.tfstate` in the bucket
-- [ ] Lock: leave an `apply` waiting at the "yes" prompt; meanwhile the `.tflock` file is in the bucket, and a second `apply` from another terminal fails with "state locked"
-- [ ] Drift: change the parameter's value in the console; `plan` refreshes and proposes to set it back to the code
-- [ ] `destroy`: the state file stays in the bucket, empty; its previous versions are visible (versioning)
-- [ ] Delete the bucket by hand from the console (empty it first, versions included)
+- [x] Bootstrap: the first `init` with `--backend-bootstrap` creates the bucket (versioning, encryption, public access blocked)
+- [x] `apply`, then check the state at `remote-state/terraform.tfstate` in the bucket
+- [x] Lock: leave an `apply` waiting at the "yes" prompt; meanwhile the `.tflock` file is in the bucket, and a second `apply` from another terminal fails with "state locked"
+- [x] Drift: change the parameter's value by hand; `plan` refreshes and proposes to set it back to the code
+- [x] `destroy`: the state file stays in the bucket, empty; its previous versions are visible (versioning)
+  - the lock file has versions too: each apply writes it, then deletes it (a delete marker)
+- [x] Delete the bucket by hand from the console (empty it first, versions included)
 
-**Status:** 🔜 Next
+**Status:** ✅ Complete — bootstrap, lock, drift and versioning verified in `terraform/remote-state/` (2026-10-21); bucket deleted
 
 ---
 
@@ -203,7 +206,7 @@ learn-aws/
 - [ ] State: local, or remote as in step 13 (to decide when we get there)
 - [ ] `plan` both; apply at most one (no parallel deployments)
 
-**Status:** 🔮 Future work
+**Status:** 🔜 Next
 
 ---
 
