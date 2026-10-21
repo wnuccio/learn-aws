@@ -395,19 +395,50 @@ IMPORTANT: Terraform uses the same credentials as the CLI
 - a `variable` has a type and optionally a `default` value, which can be overriden (in `terraform.tfvars` or the CLI)
 - different `terraform.tfvars` can be used for different environments
 
+## State
+- three entities: 
+  - the `code` (`main.tf`, desired configuration)
+  - the `state` (`terraform.tfstate`)
+  - the `cloud` (real resources)
+- the state 
+  - holds a `link` per resource: it tracks the resource using its ID
+  - a `drift` is a misalignment between the link and the real resource: the latter can be different or removed
+  - Terraform never scans the account: it only sees the resources linked in the state
+
 ## Operations
 - move to /terraform directory
-- `terraform init`: the plugin for the provider declared in `main.tf` is downloaded
-- `terraform apply`: the plugin translates the HCL declarations to AWS API calls; generates the tfstate
-- `terraform plan`: compare the current state with the new configuration and detects `drift`
-- `terraform destroy`: removes the resources tracked in the state, in the correct order, then emptying the state
-- `terraform state list`: lists the addresses of all the resources currently tracked in the state
-- `terraform import <address> <aws_id>`: adopts an already existing AWS resource into the state
+- `terraform init`: downloads the provider plugin declared in `main.tf` and configures the backend; creates no state
+- `terraform plan`: two phases
+  - 1: `refresh` (state ↔ cloud): reads each linked resource from AWS and updates its attributes in the state; drops the link if the resource is absent
+  - 2: `compare` (code ↔ state (refreshed)): each difference between code and state becomes an action
+    - the state is only a view of reality; **the desired side is the code**
+    - a resource in the state but no longer in the code is destroyed
+  - actions: each resource is planned to be created, updated on the cloud, replaced (destroy + create), destroyed
+  - e.g.: a linked resource deleted by hand from the console - refresh drops it, plan (due to compare) creates it again
+- `terraform apply`: the plugin translates the HCL declarations to AWS API calls; 
+  - the first apply creates the state; the following ones update it
+- `terraform destroy`: removes the linked resources, in the correct order, then empties the state
+- `terraform state list`: lists the addresses of all the resources currently linked in the state
+- `terraform import <address> <aws_id>`
+  - creates a link to a resource that exists in AWS and is declared in the code, but is not tracked in the state (e.g. created by hand)
+  - without it, plan says "create" and apply fails with "already exists"
   - `<address>` is the terraform resource address (ex. `aws_cloudwatch_log_group.lambda_log_group`)
   - `<aws_id>` is the AWS resource id (see the 'Import' section on AWS)
-  - it's a state-only operation: nothing is created or modified in AWS; `terraform state rm <address>` backs it out
+  - it's a state-only operation: nothing is created or modified in AWS
+- `terraform state rm <address>` 
+  - removes a link; the resource stays in AWS, but it's no longer tracked by Terraform
+  - when: stop managing a resource without deleting it, or one that can't be deleted (e.g. an MSK mapping stuck in `Creating`)
+  - remove the block from the code too, otherwise plan creates it again
 
-IMPORTANT: any resource created manually before 'apply' will not be managed by Terraform; use 'import' for it
+## Remote state
+- with a team, the state must be a single shared copy: a local file per person is not feasible
+- remote state: the state file lives in an S3 bucket, one key per module, readable by the team and by the CI pipeline
+- `lock`: a `<key>.tflock` file next to the state, created at the start of a plan/apply and deleted at the end
+  - it only says "someone is working on this state": a concurrent run fails with "state locked"
+  - native in S3 since Terraform 1.10 (`use_lockfile = true`); older setups used a DynamoDB table
+- bucket `versioning`: keeps every previous version of the state (history, rollback)
+- the bucket is not part of any state: here it's created by Terragrunt's bootstrap, and deleted by hand from the console
+  - it outlives `destroy`, which only empties the state files
 
 
 
