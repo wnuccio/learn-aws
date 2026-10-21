@@ -47,3 +47,4 @@ terraform/**/terraform.tfstate*
 ### Terragrunt ###
 terraform/**/.terragrunt-cache/
 terraform/**/provider.tf
+terraform/**/backend.tf

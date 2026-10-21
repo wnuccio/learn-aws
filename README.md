@@ -76,6 +76,25 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
   - `aws logs tail /ecs/fargate-demo --follow`: shows the container's logs
   - `terragrunt destroy`: cleans up
 
+## Test Remote State
+- in `terraform/remote-state/`:
+- `BUCKET="learn-aws-tfstate-$(aws sts get-caller-identity --query Account --output text)"`: saves the state bucket name
+- `terragrunt init --backend-bootstrap`: creates the bucket (first time only), generates `backend.tf`, configures the backend
+- `terragrunt apply`: creates the parameter; the state is written to the bucket
+- `aws s3 ls "s3://${BUCKET}/remote-state/"`: shows `terraform.tfstate`
+- lock:
+  - change `value` to `"value2"` in `main.tf`, then `terragrunt apply`: leave it waiting at the "yes" prompt
+  - `aws s3 ls "s3://${BUCKET}/remote-state/"`: in another terminal; shows `terraform.tfstate.tflock` too
+  - `terragrunt plan`: in the other terminal; fails with `Error acquiring the state lock`
+  - answer `yes` in the first terminal: the lock file disappears
+- drift:
+  - `aws ssm put-parameter --name /learn-aws/remote-state/demo --value value3 --overwrite`: changes the value by hand (or in the console)
+  - `terragrunt plan`: the refresh reads `value3`; the plan proposes `insecure_value: "value3" -> "value2"` (visible, not `sensitive`)
+  - `terragrunt apply`: aligns the cloud to the code
+- `terragrunt destroy`: deletes the parameter; the state file stays in the bucket, empty
+- `aws s3api list-object-versions --bucket "$BUCKET" --prefix remote-state/ --query 'Versions[].[LastModified,Size]'`: lists the state's previous versions
+- delete the bucket by hand in the console (S3 → bucket → `Empty`, then `Delete`): it's not in any state
+
 ## Documentation
 - [Learning Plan](.docs/plan.md)
 - [AWS Notes](.docs/aws.md)
