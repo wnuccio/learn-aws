@@ -199,14 +199,19 @@ learn-aws/
 ---
 
 ### 14. Terragrunt Environments
-- [ ] `dev/` and `prod/` configurations of one module (e.g. `lambda/`), differing only in their inputs
-  - module code in `terraform/modules/lambda/`; deployments in `terraform/live/dev/lambda/` and `terraform/live/prod/lambda/`, via `terraform { source = ... }`
-  - env-wide inputs in an `env.hcl` per environment
-- [ ] Resource names come from inputs, so the environments wouldn't collide (e.g. the S3 bucket name doesn't depend on any input today)
-- [ ] State: local, or remote as in step 13 (to decide when we get there)
-- [ ] `plan` both; apply at most one (no parallel deployments)
+- [x] `dev/` and `prod/` configurations of one module (`remote-state`, free and instant, instead of `lambda/`), differing only in their inputs
+  - module code in `terraform/modules/remote-state/` (no `terragrunt.hcl`); deployments in `terraform/live/dev/remote-state/` and `terraform/live/prod/remote-state/`, via `terraform { source = ... }`
+  - the old `terraform/remote-state/` module removed
+- [x] Parameter name and value come from inputs, so the environments don't collide: `/learn-aws/<env>/demo`
+- [x] `env.hcl` per environment holds all the per-environment data (`env`, `parameter_value`), read with `read_terragrunt_config` (data, not config, so not an `include`)
+  - the two deployment `terragrunt.hcl` files are identical
+- [x] Remote state: `remote_state` moved to `terraform/live/backend.hcl`, a second `include` next to `root.hcl` (not in `root.hcl`, so the other modules keep their local state)
+  - `path_relative_to_include("backend")` gives the keys `dev/remote-state/` and `prod/remote-state/` in the same bucket
+  - region read from `root.hcl` with `read_terragrunt_config` (an included file can't see `include.root`)
+- [x] "Test Remote State" (dev only: bootstrap, lock, drift, versions) and "Test Environments" (dev and prod side by side) in `README.md`, independent of each other
+- [x] Both tests run, everything destroyed, bucket deleted
 
-**Status:** 🔜 Next
+**Status:** ✅ Complete — two environments from one module, separate state keys in one bucket (2026-10-22)
 
 ---
 
@@ -214,7 +219,7 @@ learn-aws/
 - [ ] Split a module (e.g. network vs Lambda) and pass outputs with a `dependency` block
 - [ ] See how `run --all` orders the modules
 
-**Status:** 🔮 Future work
+**Status:** 🔜 Next
 
 ---
 

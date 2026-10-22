@@ -77,22 +77,32 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
   - `terragrunt destroy`: cleans up
 
 ## Test Remote State
-- in `terraform/remote-state/`:
+- in `terraform/live/dev/remote-state/`:
 - `BUCKET="learn-aws-tfstate-$(aws sts get-caller-identity --query Account --output text)"`: saves the state bucket name
 - `terragrunt init --backend-bootstrap`: creates the bucket (first time only), generates `backend.tf`, configures the backend
-- `terragrunt apply`: creates the parameter; the state is written to the bucket
-- `aws s3 ls "s3://${BUCKET}/remote-state/"`: shows `terraform.tfstate`
+- `terragrunt apply`: creates `/learn-aws/dev/demo`; the state is written to the bucket
+- `aws s3 ls "s3://${BUCKET}/dev/remote-state/"`: shows `terraform.tfstate`
 - lock:
-  - change `value` to `"value2"` in `main.tf`, then `terragrunt apply`: leave it waiting at the "yes" prompt
-  - `aws s3 ls "s3://${BUCKET}/remote-state/"`: in another terminal; shows `terraform.tfstate.tflock` too
+  - change `parameter_value` to `"dev-value-2"` in `live/dev/env.hcl`, then `terragrunt apply`: leave it waiting at the "yes" prompt
+  - `aws s3 ls "s3://${BUCKET}/dev/remote-state/"`: in another terminal; shows `terraform.tfstate.tflock` too
   - `terragrunt plan`: in the other terminal; fails with `Error acquiring the state lock`
   - answer `yes` in the first terminal: the lock file disappears
 - drift:
-  - `aws ssm put-parameter --name /learn-aws/remote-state/demo --value value3 --overwrite`: changes the value by hand (or in the console)
-  - `terragrunt plan`: the refresh reads `value3`; the plan proposes `insecure_value: "value3" -> "value2"` (visible, not `sensitive`)
+  - `aws ssm put-parameter --name /learn-aws/dev/demo --value dev-value-3 --overwrite`: changes the value by hand (or in the console)
+  - `terragrunt plan`: the refresh reads `dev-value-3`; the plan proposes `insecure_value: "dev-value-3" -> "dev-value-2"` (visible, not `sensitive`)
   - `terragrunt apply`: aligns the cloud to the code
 - `terragrunt destroy`: deletes the parameter; the state file stays in the bucket, empty
-- `aws s3api list-object-versions --bucket "$BUCKET" --prefix remote-state/ --query 'Versions[].[LastModified,Size]'`: lists the state's previous versions
+- `aws s3api list-object-versions --bucket "$BUCKET" --prefix dev/remote-state/ --query 'Versions[].[LastModified,Size]'`: lists the state's previous versions
+- set `parameter_value` back to `"dev-value-1"` in `live/dev/env.hcl`
+- delete the bucket by hand in the console (S3 → bucket → `Empty`, then `Delete`): it's not in any state
+
+## Test Environments
+- `BUCKET="learn-aws-tfstate-$(aws sts get-caller-identity --query Account --output text)"`: saves the state bucket name
+- `cd terraform/live/dev/remote-state && terragrunt init --backend-bootstrap && terragrunt apply`: creates the bucket (first time only) and `/learn-aws/dev/demo` = `dev-value-1`
+- `cd ../../prod/remote-state && terragrunt init && terragrunt apply`: creates `/learn-aws/prod/demo` = `prod-value-1`; same bucket, already bootstrapped
+- `aws ssm get-parameters-by-path --path /learn-aws --recursive --query 'Parameters[].[Name,Value]' --output text`: shows both parameters, with their values
+- `aws s3 ls "s3://${BUCKET}/" --recursive`: shows two state files, `dev/remote-state/` and `prod/remote-state/`
+- `terragrunt destroy` in both folders
 - delete the bucket by hand in the console (S3 → bucket → `Empty`, then `Delete`): it's not in any state
 
 ## Documentation
