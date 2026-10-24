@@ -147,14 +147,15 @@ learn-aws/
   - [x] ECS cluster, task definition (smallest size: 0.25 vCPU, 0.5 GB), service with one task and a public IP
   - [x] task execution role only (ECR pull, logs): the code calls no AWS service, so no task role
   - [x] commands for push, task IP, curl and logs in the "Test Fargate" section of `README.md`
-- [ ] `apply`, then `docker build` and `docker push` to ECR: the service retries until the image exists
-  - 2026-10-15: `apply` and push worked; the service can't place the task: `your account is currently blocked` (same block as step 10); destroyed
-  - added to the AWS Support case
+- [x] `apply`, then `docker build` and `docker push` to ECR: the service retries until the image exists
+  - 2026-10-15: blocked by the account block (as step 10); 2026-10-24: worked
+  - before the push, a stopped task about every 2 minutes with `CannotPullContainerError ... not found`; the next retry after the push started the task, no forced deployment needed
+  - the task definition was revision 2: `destroy` only deregisters a revision (INACTIVE), and the counter of a family never resets
   - in zsh, `"$REPO:latest"` is wrong (`:l` is a modifier): use `"${REPO}:latest"`
-- [ ] Find the task's public IP (CLI or console), `curl` it; check the logs in CloudWatch
-- [ ] **`destroy` immediately after** (billed per second while running)
+- [x] Find the task's public IP (CLI or console), `curl` it; check the logs in CloudWatch
+- [x] **`destroy` immediately after** (billed per second while running)
 
-**Status:** 🔜 Unblocked — the account block was lifted on 2026-10-24; next: `apply`, push the image again, then test
+**Status:** ✅ Complete — task running on Fargate, `curl` returned `Hello, World!`, logs checked, destroyed (2026-10-24)
 
 ---
 

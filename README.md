@@ -70,18 +70,23 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - run the server on Fargate (in `terraform/fargate/`, after `docker build` above):
   - `export TF_VAR_my_ip_cidr="$(curl -s https://checkip.amazonaws.com)/32"`: sets my public IP
   - `terragrunt apply`: deploys the repository, network, cluster and service; the task fails until the image is pushed
+  - check the console, ECS > Clusters > `fargate-demo` > Services > `fargate-demo` > Tasks: 
+    - a failed attempt about every 2 minutes, `CannotPullContainerError ... not found`
   - `REPO=$(terragrunt output -raw repository_url)`: saves the ECR repository URL
   - `aws ecr get-login-password | docker login --username AWS --password-stdin "${REPO%%/*}"`: logs Docker into the registry
   - `docker tag fargate-demo "${REPO}:latest"`: the name is where `docker push` sends it: not Docker Hub (the default) but the ECR repository
   - `docker image inspect fargate-demo --format '{{.RepoTags}}'`: lists all the image's names, the local one and the ECR one
   - `docker push "${REPO}:latest"`: uploads the image; the service's next launch attempt picks it up
   - `aws ecs update-service --cluster fargate-demo --service fargate-demo --force-new-deployment`: optional, launches a task now instead of waiting for the next attempt
+    - check the console, same Tasks page: a task in `Running` (it may already be there, launched by the service's automatic retry after the push)
   - `TASK=$(aws ecs list-tasks --cluster fargate-demo --service-name fargate-demo --query 'taskArns[0]' --output text)`: finds the running task
   - `ENI=$(aws ecs describe-tasks --cluster fargate-demo --tasks "$TASK" --query "tasks[0].attachments[0].details[?name=='networkInterfaceId'].value" --output text)`: finds its network interface
   - `IP=$(aws ec2 describe-network-interfaces --network-interface-ids "$ENI" --query 'NetworkInterfaces[0].Association.PublicIp' --output text)`: finds its public IP
   - `curl "http://$IP:8080/hello?name=World"`: the response should be `Hello, World!`
   - `aws logs tail /ecs/fargate-demo --follow`: shows the container's logs
   - `terragrunt destroy`: cleans up
+  - `docker rmi fargate-demo "${REPO}:latest"`: removes the local image (both names); the base image `eclipse-temurin:17-jre` stays, for the next build
+    - or `docker system prune -a --volumes`: removes all unused images, containers, networks and volumes
 
 ## Test Remote State
 - in `terraform/live/dev/remote-state/`:
