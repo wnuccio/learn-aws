@@ -303,16 +303,27 @@ sequence of events:
 - SSH (Secure Shell): a protocol to open a terminal on a remote machine over an encrypted connection
 - server: the remote machine runs `sshd`, listening on port 22; 
 - client: the `ssh` command
-- analogy: the public key is a lock; the private key is the only key that opens it
+- philosophy
+  - the `public key` is a lock; 
+    - it can be shared with anyone and put on the server;
+  - the `private key` is the only key that opens the lock; 
+    - it never travels over the network; 
+    - it stays on the client
+  - basic communication:
+    - the server sends a `challenge` to the client
+    - the client `signs the challenge` with its private key
+    - the server `checks the signature` with the public key
+  - only the private key can produce a valid signature, but anyone with the public key can check it
 - setup: 
-  - the client's public key (the lock) is put on the server, in `~/.ssh/authorized_keys`; 
-  - the private key (the key) stays on the client
+  - the client generates a **key pair** locally (public + private)
+  - the client's **public key** (the lock) is put on the server, in `~/.ssh/authorized_keys`; 
+  - the **private key** (the key) stays on the client
 - communication:
   - 1: the server proves its identity with its host key; the client saves it in `~/.ssh/known_hosts` at the first connection
   - 2: the client sends its public key (the lock) to log-in
   - 3: the server checks that the lock is in `authorized_keys`, otherwise refuses
   - 4: the server sends a challenge; the client signs it with its private key
-  - 5: the server verifies the signature with the public key: **the private key never travels over the network**
+  - 5: the server verifies the signature with the public key
   - 6: the encrypted connection is open
 - Example:
   - `ssh-keygen -t ed25519`: creates the key pair (`~/.ssh/id_ed25519` private, `~/.ssh/id_ed25519.pub` public)

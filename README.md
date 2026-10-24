@@ -46,8 +46,15 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - `export TF_VAR_my_ip_cidr="$(curl -s https://checkip.amazonaws.com)/32"`: sets my public IP
 - `terragrunt apply`: deploys the bastion and target instances, and outputs the `ssh_command`
 - `ssh-add ~/.ssh/bastion-demo`: loads the private key into the SSH agent, so the jump process of `-J` can use it
+- `ssh-add -l`: lists the keys loaded in the agent; `bastion-demo` should be there
 - `ssh -J ec2-user@<bastion_public_ip> ec2-user@<target_private_ip>`: connects to target  (copy from the output)
-- `terragrunt destroy`: cleans up
+- `hostname -I`: on the target, shows its private IP (`10.0.2.x`)
+- `ssh ec2-user@<target_private_ip>`: from the laptop, fails; the target is reachable only through the bastion
+- `exit`: on the target, closes the session (and the jump through the bastion); back to the laptop shell
+- `terragrunt destroy`: cleans up (copy the two IPs from the output first: they're gone after)
+- `ssh-keygen -R <bastion_public_ip>` and `ssh-keygen -R <target_private_ip>`: 
+  - remove the host keys from `~/.ssh/known_hosts` 
+  - so a later apply with the same IPs doesn't fail with `REMOTE HOST IDENTIFICATION HAS CHANGED`
 
 ## Test Fargate
 - `mvn package`: creates the fat jar

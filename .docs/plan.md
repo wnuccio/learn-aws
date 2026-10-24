@@ -122,14 +122,15 @@ learn-aws/
   - [x] bastion EC2 in the public subnet, with a public IP; SSH allowed only from my IP
   - [x] small private EC2 in the private subnet, SSH allowed only from the bastion's security group
   - [x] `aws_key_pair` from a local public key (private key never committed)
-- [ ] `apply`, then SSH to the private instance through the bastion (`ssh -J`)
-  - apply blocked on 2026-10-13: the network parts are created, `RunInstances` fails with `Blocked: This account is currently blocked and not recognized as a valid account` (twice); dry runs succeed, billing is fine
-  - waiting on an AWS Support case (Account and billing)
+- [x] `apply`, then SSH to the private instance through the bastion (`ssh -J`)
+  - apply blocked from 2026-10-13 (`RunInstances`: `This account is currently blocked`) until AWS Support lifted it on 2026-10-24
+  - verified: `hostname -I` on the target shows `10.0.2.x`; its `curl` to the internet times out; direct `ssh` from the laptop fails
+  - host keys removed afterwards with `ssh-keygen -R` (the IPs may come back at the next apply)
 - [ ] Optional: reach the RDS of `lambda2/` through the bastion (SSH tunnel)
 - [ ] Compare: SSM Session Manager as an alternative (no open port, no keys)
-- [ ] **`destroy` immediately after** (EC2 and public IPv4 billed hourly)
+- [x] **`destroy` immediately after** (EC2 and public IPv4 billed hourly)
 
-**Status:** ⏸️ On hold — module written; EC2 launches blocked at account level, waiting for AWS Support
+**Status:** ✅ Main test complete — `ssh -J` through the bastion verified, destroyed (2026-10-24); the RDS tunnel and the SSM comparison are optional and still open
 
 ---
 
@@ -153,7 +154,7 @@ learn-aws/
 - [ ] Find the task's public IP (CLI or console), `curl` it; check the logs in CloudWatch
 - [ ] **`destroy` immediately after** (billed per second while running)
 
-**Status:** ⏸️ On hold — module validated and applied; the task can't start because of the account block, waiting for AWS Support (as step 10)
+**Status:** 🔜 Unblocked — the account block was lifted on 2026-10-24; next: `apply`, push the image again, then test
 
 ---
 
