@@ -383,6 +383,15 @@ internet ──22──> [bastion EC2]  public subnet (public IP, internet gatew
   - 4: the image is downloaded and the container starts
   - the code in the container never sees the execution role's credentials, only the task role's
 
+## Tags
+- a tag is a `key = value` pair; a resource can have many
+- `Name`: identifies one resource, shown as its name in the console; different for each resource
+- other keys group resources - same value on many (e.g. `Project = "learn-aws"`) - and can be used for:
+  - filter in the console, Tag Editor, Resource Groups
+  - split the bill in Cost Explorer (after activating it as a cost allocation tag)
+  - IAM conditions (e.g. allowed only on `Project = learn-aws`)
+- a name prefix (e.g. `bastion-demo-`) groups by eye only, not filterable
+
 ## Troubleshooting
 **Strategy for debugging Lambda + API Gateway integration issues:**
 - **Add logs at boundaries**: log before and after each major operation (S3 write, response building, etc.)
@@ -465,7 +474,15 @@ IMPORTANT: Terraform uses the same credentials as the CLI
   - the cache also holds the files Terragrunt generates from its config (e.g. `provider.tf` from a `generate` block)
   - the cache also holds `terraform.tfstate`: deleting it with live resources loses track of them
 
-## Sharing a value between modules
-- declare the same `variable` in each module, without a `default`
-- declare an input with the same name in `root.hcl` (`inputs` block): Terragrunt injects it into every module
-- input `aws_region` → env variable `TF_VAR_aws_region` → Terraform `var.aws_region` (names must match)
+## Terraform variables
+- to share a `variable` between modules
+  - declare it in each module, without a `default`
+  - declare an input with the same name in `root.hcl` (`inputs` block)
+    - Terragrunt merges the input in each module with the module's own variables
+  - e.g: input `aws_region` → env variable `TF_VAR_aws_region` → Terraform `var.aws_region` (names must match)
+- precedence when several sources set the same variable (lowest to highest):
+  - `default` in `variables.tf`
+  - env variables `TF_VAR_<name>` (Terragrunt `inputs` or explicit `export` from the command line)
+  - `.tfvars` files
+  - `-var` on the command line
+  - if none of the previous is done, Terraform `prompts for the value` interactively.

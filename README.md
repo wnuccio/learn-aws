@@ -43,17 +43,22 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - `ssh-keygen -t ed25519 -f ~/.ssh/bastion-demo -C bastion-demo`: creates the key pair (just once)
   - `~/.ssh/bastion-demo`:  private key
   - `~/.ssh/bastion-demo.pub` public key, uploaded by Terraform
+- in `terraform/bastion/` (two units: `network`, and `instances` depending on it):
 - `export TF_VAR_my_ip_cidr="$(curl -s https://checkip.amazonaws.com)/32"`: sets my public IP
-- `terragrunt apply`: deploys the bastion and target instances, and outputs the `ssh_command`
+- `terragrunt run --all plan`: plans `network`, then `instances` with the mock IDs (`network` doesn't exist yet)
+- `terragrunt run --all apply`: one confirmation for the whole stack; deploys `network`, then `instances`
+- `cd instances && terragrunt output`: shows the IPs, the `ssh_command` and the `known_hosts_cleanup_command`
 - `ssh-add ~/.ssh/bastion-demo`: loads the private key into the SSH agent, so the jump process of `-J` can use it
 - `ssh-add -l`: lists the keys loaded in the agent; `bastion-demo` should be there
 - `ssh -J ec2-user@<bastion_public_ip> ec2-user@<target_private_ip>`: connects to target  (copy from the output)
 - `hostname -I`: on the target, shows its private IP (`10.0.2.x`)
 - `ssh ec2-user@<target_private_ip>`: from the laptop, fails; the target is reachable only through the bastion
 - `exit`: on the target, closes the session (and the jump through the bastion); back to the laptop shell
-- `terragrunt destroy`: cleans up (copy the two IPs from the output first: they're gone after)
-- `ssh-keygen -R <bastion_public_ip>` and `ssh-keygen -R <target_private_ip>`: 
-  - remove the host keys from `~/.ssh/known_hosts` 
+- `cd ../network && terragrunt destroy --destroy-dependencies-check`: lists `instances` as dependent and asks to confirm; answer `n`
+  - without the flag there's no check (Terragrunt 1.x): only Terraform's own prompt
+- `cd .. && terragrunt run --all destroy`: cleans up in reverse order, `instances` then `network` (copy `known_hosts_cleanup_command` first: the outputs are gone after)
+- `known_hosts_cleanup_command` (`ssh-keygen -R` for both IPs):
+  - removes the host keys from `~/.ssh/known_hosts`
   - so a later apply with the same IPs doesn't fail with `REMOTE HOST IDENTIFICATION HAS CHANGED`
 
 ## Test Fargate

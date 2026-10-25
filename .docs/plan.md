@@ -218,10 +218,23 @@ learn-aws/
 ---
 
 ### 15. Terragrunt Dependency Blocks
-- [ ] Split a module (e.g. network vs Lambda) and pass outputs with a `dependency` block
-- [ ] See how `run --all` orders the modules
+- Problem: one root module means one state and one `apply` for parts with different lifecycles (the network rarely changes, the instances often)
+- Split `terraform/bastion/` in place (old version in git; nothing deployed, so no state to migrate), simple layout (no `modules/` + `live/`, local state)
+- [x] `terraform/bastion/network/`: VPC, both subnets, internet gateway, public route table and its association
+  - outputs: `vpc_id`, `public_subnet_id`, `private_subnet_id`
+- [x] `terraform/bastion/instances/`: security groups, key pair, AMI lookup, both instances; same outputs as before, plus `known_hosts_cleanup_command`
+  - `dependency "network"` in its `terragrunt.hcl`, outputs passed as `inputs`; `aws_subnet.public.id` becomes `var.public_subnet_id`, and so on
+  - `mock_outputs` for `plan` before `network` exists, allowed only for `validate` and `plan`
+- [x] Remove the old files from `terraform/bastion/` (`main.tf`, `outputs.tf`, `variables.tf`, `terragrunt.hcl`, local caches)
+- [x] `run --all plan`, then `run --all apply` from `terraform/bastion/`: `network` first
+  - `run --all apply` asks one confirmation for the whole stack, then applies each unit with `-auto-approve`
+- [x] Same SSH test as step 10 ("Test Bastion" updated in `README.md`)
+- [x] Try `destroy` in `network/` alone while `instances` exists
+  - Terragrunt 1.x doesn't check dependents by default: only Terraform's own prompt; answered no
+  - with `--destroy-dependencies-check` it lists `instances` and asks to confirm; answered `n`
+- [x] `run --all destroy`: reverse order
 
-**Status:** 🔜 Next
+**Status:** ✅ Complete — two units wired by a `dependency` block, applied and destroyed in order with `run --all` (2026-10-25)
 
 ---
 
