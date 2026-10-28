@@ -67,12 +67,14 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
 - in `terraform/bastion/` (units `network`, and `ssm` depending on it):
 - `cd network && terragrunt apply`: creates the network (skip it if it already exists)
 - `cd ../ssm && terragrunt apply`: creates the role, the private instance and the three endpoints
-- `terragrunt output`: shows the instance ID
-- `aws ssm describe-instance-information`: the instance should be listed with `PingStatus` `Online`: the agent registered it (it may take a minute or two)
-- `aws ssm start-session --target <instance_id>`: opens a shell on the private instance, with no SSH and no key
+- `terragrunt output`: shows the `instance_id` and the `start_session_command`
+- `aws ssm describe-instance-information --filters "Key=InstanceIds,Values=$(terragrunt output -raw instance_id)"`: the instance should be listed with `PingStatus` `Online`: the agent registered it (it may take a minute or two)
+- `aws ssm start-session --target <instance_id>`: opens a shell on the private instance, with no SSH and no key (copy from `start_session_command`)
 - `hostname -I`: on the instance, shows its private IP (`10.0.2.x`)
 - `exit`: closes the session
 - `terragrunt destroy`: in `ssm`, then in `network` (instance and endpoints are billed hourly)
+  - or `terragrunt run --all destroy` from `terraform/bastion/`: needs `TF_VAR_my_ip_cidr` set, for `instances`
+    - deleting the three endpoints takes several minutes (state `deleting`): AWS removes their ENIs first
 
 ## Test Fargate
 - `mvn package`: creates the fat jar

@@ -5,6 +5,9 @@ data "aws_availability_zones" "available" {
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 
+  # Only needed by the ssm unit: its interface endpoints use private DNS, which requires DNS hostnames on the VPC
+  enable_dns_hostnames = true
+
   tags = {
     Name = "${var.name}-vpc"
   }

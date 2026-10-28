@@ -127,16 +127,18 @@ learn-aws/
   - verified: `hostname -I` on the target shows `10.0.2.x`; its `curl` to the internet times out; direct `ssh` from the laptop fails
   - host keys removed afterwards with `ssh-keygen -R` (the IPs may come back at the next apply)
 - [ ] ~~Optional: reach the RDS of `lambda2/` through the bastion (SSH tunnel)~~ skipped (2026-10-28): the two VPCs are separate, so it would need a second bastion in `lambda2/`; discussed in theory only
-- [ ] Compare: SSM Session Manager as an alternative (no open port, no keys)
-  - [ ] new unit `terraform/bastion/ssm/`, with a `dependency` on `network` (like `instances`)
-  - [ ] IAM role for EC2 with `AmazonSSMManagedInstanceCore`, assigned through an `aws_iam_instance_profile`
-  - [ ] one EC2 in the private subnet: no key pair, no SSH rule, no public IP
-  - [ ] three interface endpoints (`ssm`, `ssmmessages`, `ec2messages`), with a security group allowing 443 from the instance
-  - [ ] install the Session Manager plugin (`brew install --cask session-manager-plugin`)
-  - [ ] `apply`, then test as in "Test SSM" of `README.md` (`aws ssm start-session`); **`destroy` right after**
+- [x] Compare: SSM Session Manager as an alternative (no open port, no keys)
+  - [x] new unit `terraform/bastion/ssm/`, with a `dependency` on `network` (like `instances`)
+  - [x] IAM role for EC2 with `AmazonSSMManagedInstanceCore`, assigned through an `aws_iam_instance_profile`
+  - [x] one EC2 in the private subnet: no key pair, no SSH rule, no public IP
+  - [x] three interface endpoints (`ssm`, `ssmmessages`, `ec2messages`), with a security group allowing 443 from the instance
+    - one `aws_vpc_endpoint` with `for_each`; private DNS needs `enable_dns_hostnames = true` on the VPC (added in `network`)
+  - [x] install the Session Manager plugin (`brew install --cask session-manager-plugin`)
+  - [x] `apply`, then test as in "Test SSM" of `README.md` (`aws ssm start-session`); **`destroy` right after**
+    - destroy is slow: the endpoints stay in `deleting` for several minutes while AWS removes their ENIs
 - [x] **`destroy` immediately after** (EC2 and public IPv4 billed hourly)
 
-**Status:** ✅ Main test complete — `ssh -J` through the bastion verified, destroyed (2026-10-24); the RDS tunnel and the SSM comparison are optional and still open
+**Status:** ✅ Complete — `ssh -J` through the bastion verified (2026-10-24); shell on the private instance through Session Manager, with no bastion, no open port and no key, destroyed (2026-10-28); the RDS tunnel skipped
 
 ---
 
