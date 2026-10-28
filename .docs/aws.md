@@ -64,6 +64,12 @@
   - it attaches an AWS-managed policy to the role by ARN (e.g. `AWSLambdaBasicExecutionRole`)
 - `aws_iam_role_policy` links the role to an inline policy
   - defines a new policy scoped to just that role, used for app-specific permissions (e.g. S3 write access)
+- from deploy to runtime, in order:
+  - 1. `iam:PassRole`: at `terraform apply`, the caller (me) assigns the role to the function (`role = ...arn`)
+    - checked once, against the caller's identity policy, not against the role
+  - 2. `sts:AssumeRole`: at runtime, the Lambda service gets temporary credentials for the role
+    - allowed by the role's trust policy; repeated whenever new credentials are needed
+  - 3. the credentials reach the function as `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`
 
 - IMPORTANT: never delete **AWSServiceRoleForxxxS** roles, which are AWS-managed and automatically created
 
@@ -199,6 +205,16 @@ sequence of events:
   - 6: the subnet's `route table` sends it to the IGW (`0.0.0.0/0`)
   - 7: the `IGW` translates the source: private IP → `public IP`, then forwards it to the client
 
+### Where Lambda and RDS live
+- a Lambda function runs on AWS-managed infrastructure, outside my VPC
+  - if I give it a `vpc_config`, Lambda creates an ENI in my subnets, which gives it a network presence there, but only for *outbound* calls
+  - the function can reach things in my VPC, and nothing connects to it
+  - it is invoked through the Lambda service's API
+- an RDS database instance has its own address in my VPC: a private IP in one of my subnets, and my security groups
+  - its main role is to *accept inbound* connections (port 5432)
+  - the machine behind it is managed by AWS, but the network endpoint is mine
+  - it can also make outbound connections: inbound/outbound describe what each is used for, not what is technically possible
+
 ### Architecture
 ```
          (public internet)
@@ -207,7 +223,7 @@ sequence of events:
         API Gateway  (outside VPC)
                 │
        lambda:InvokeFunction
-     (control plane, not network)
+     (API call, not network)
                 ▼
 ┌───────────────────── VPC ──────────────────────┐
 │                                                  │
@@ -223,7 +239,7 @@ sequence of events:
  S3 / DynamoDB  (outside VPC, public endpoints)
 ```
 - API Gateway, S3 and DynamoDB are outside the VPC; Lambda and RDS are inside, each in a private subnet
-- gateway → lambda: control-plane invocation, no VPC networking involved
+- gateway → lambda: API call to the Lambda service, no VPC networking involved
 - lambda → RDS: real network traffic (JDBC/TCP), gated by security groups
 - lambda → S3 / DynamoDB: also outside the VPC, so each needs a NAT Gateway or VPC Endpoint once the Lambda is VPC-attached
 
