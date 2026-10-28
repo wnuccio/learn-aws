@@ -61,6 +61,19 @@ A learning kata for AWS Lambda with Java 17 and Terraform. A simple "Hello World
   - removes the host keys from `~/.ssh/known_hosts`
   - so a later apply with the same IPs doesn't fail with `REMOTE HOST IDENTIFICATION HAS CHANGED`
 
+## Test SSM
+- `brew install --cask session-manager-plugin`: installs the Session Manager plugin for the AWS CLI (just once)
+- `session-manager-plugin --version`: verifies the installation
+- in `terraform/bastion/` (units `network`, and `ssm` depending on it):
+- `cd network && terragrunt apply`: creates the network (skip it if it already exists)
+- `cd ../ssm && terragrunt apply`: creates the role, the private instance and the three endpoints
+- `terragrunt output`: shows the instance ID
+- `aws ssm describe-instance-information`: the instance should be listed with `PingStatus` `Online`: the agent registered it (it may take a minute or two)
+- `aws ssm start-session --target <instance_id>`: opens a shell on the private instance, with no SSH and no key
+- `hostname -I`: on the instance, shows its private IP (`10.0.2.x`)
+- `exit`: closes the session
+- `terragrunt destroy`: in `ssm`, then in `network` (instance and endpoints are billed hourly)
+
 ## Test Fargate
 - `mvn package`: creates the fat jar
 - run the server locally, without Docker:

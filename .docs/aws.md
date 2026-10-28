@@ -158,6 +158,11 @@
   - a private subnet 
     - has route table which no route to the Internet Gateway
     - can still get outbound internet access via a NAT Gateway; inbound from the internet stays blocked
+- `VPC endpoint`: a private entrance to one AWS service inside the VPC, so a resource with no internet route can still call it
+  - `interface endpoint`: an ENI in my subnet with a private IP and a security group (e.g. `ssm`, Lambda, STS); billed hourly
+  - `gateway endpoint`: an entry in the route table; only for S3 and DynamoDB; free
+  - vs public subnet: the IGW opens the way to the whole internet; the endpoint opens it to that one service, and the traffic stays inside AWS
+  - vs NAT Gateway: the NAT lets a private subnet call out to the whole internet; the endpoint only to its service
 - security group: 
   - a set of inbound/outbound rules (protocol + port + source/destination) attached to a resource's network interface; 
   - source/destination can be a CIDR range or another security group (by ID)
@@ -360,7 +365,20 @@ internet ──22──> [bastion EC2]  public subnet (public IP, internet gatew
                  [private EC2]  private subnet (no public IP, no internet route)
 ```
 
-- alternative: SSM Session Manager gives a shell through the AWS API, with IAM access control
+### SSM Session Manager
+- alternative to the bastion: a shell through the AWS API, with IAM access control
+- `SSM` = AWS Systems Manager (formerly "Simple Systems Manager"); Session Manager is one of its capabilities
+- opposite direction from the bastion: **nothing connects inbound to the instance**
+  - 1: the SSM agent on the private instance (included in the Amazon Linux AMI) calls the SSM service over HTTPS (443), with the instance role
+  - 2: this registers the instance with Session Manager as a managed instance; then the agent opens a control channel to `ssmmessages` and keeps it open
+  - 3: later, `aws ssm start-session` from my laptop (IAM checks `ssm:StartSession`; needs the Session Manager plugin)
+  - 4: Session Manager tells the agent on the control channel; the agent opens a data channel to `ssmmessages`, which carries the session
+- control channel: one per instance, open as long as the instance runs; always free to receive new sessions
+- data channel: one per session; **an instance can have many sessions at the same time**, each with its own data channel
+  - closing a session closes only its data channel; the control channel stays open for the next one
+- a private subnet with no internet needs three interface endpoints for step 1: `ssm`, `ssmmessages`, `ec2messages`
+- the role needs `AmazonSSMManagedInstanceCore`
+- no SSH port, no keys, no bastion
 
 ## ECS (Elastic Container Service) and Fargate
 - `image`: a frozen file system (OS files - kernel excluded, JDK, the jar) plus a start command
